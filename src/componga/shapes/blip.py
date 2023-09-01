@@ -1,8 +1,8 @@
-from .baseshape import BaseShape
 from kivy.graphics import Line, Color
 from kivy.animation import Animation
 from kivy.properties import NumericProperty
 from kivy.vector import Vector
+from .baseshape import BaseShape
 
 class Blip(BaseShape):
     radius = NumericProperty(10)

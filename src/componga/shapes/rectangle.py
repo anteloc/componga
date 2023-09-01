@@ -1,6 +1,6 @@
-from .baseshape import BaseShape
 from kivy.graphics import Line
 from kivy.vector import Vector
+from .baseshape import BaseShape
 
 class Rectangle(BaseShape):
     def __init__(self, *args, **kwargs):

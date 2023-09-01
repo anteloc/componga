@@ -177,6 +177,17 @@ class ChromaHorizontalBlurEffect(ChromaShapeEffectMixin, HorizontalBlurEffect):
 class ChromaVerticalBlurEffect(ChromaShapeEffectMixin, VerticalBlurEffect):
     pass
 
+class ShapeEffect(EffectWidget):
+    def add_widget(self, shape, *args, **kwargs):
+        self.shape = shape
+        self.bind(on_touch_down=shape.on_touch_down)
+        self.bind(on_touch_move=shape.on_touch_move)
+        self.bind(on_touch_up=shape.on_touch_up)
+        self.cancel_fade = shape.cancel_fade
+        self.fade_shape = shape.fade_shape
+
+        return super().add_widget(shape, *args, **kwargs)
+
 class DraggableEffectWidget(EffectWidget):
     def __init__(self, shape, **kwargs):
         super(DraggableEffectWidget, self).__init__(**kwargs)

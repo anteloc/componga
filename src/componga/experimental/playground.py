@@ -1,4 +1,383 @@
 import sys
+from kivy.config import Config
+# Disable config: %(name)s = probesysfs
+# since it causes touchpad behave like it's a touchscreen
+Config.set('input', '%(name)s', None)
+############################################
+
+from kivy.app import App
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.scrollview import ScrollView
+
+from kivy.app import App
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from collections import OrderedDict
+from kivy.properties import BooleanProperty
+
+from kivy.app import App
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.lang import Builder
+from collections import OrderedDict
+
+from kivy.app import App
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.lang import Builder
+from collections import OrderedDict
+
+# KV language string
+kv = '''
+<PopupHelp>:
+    title: 'Help'
+    title_align: 'center'
+    size_hint: .5, .5
+    BoxLayout:
+        id: content
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+        ScrollView:
+            id: scroll
+            bar_width: 10
+            scroll_type: ['bars', 'content']
+            BoxLayout:
+                id: scroll_content
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+
+BoxLayout:
+    orientation: 'vertical'
+    Button:
+        text: 'Show Popup'
+        size_hint: (None, None)
+        size: (200, 50)
+        pos_hint: {'center_x': 0.5}
+        on_press: app.show_popup()
+'''
+
+# Load the KV string
+Builder.load_string(kv)
+
+class PopupHelp(Popup):
+    pass
+
+class MainApp(App):
+    def build(self):
+        return Builder.load_string(kv)  # Return the root widget defined in the kv string
+
+    def show_popup(self):
+        popup = PopupHelp()
+        items = OrderedDict([
+            ('Item 1', 'Help for [color=ff3333]Item 1[/color]'),
+            ('Item 2', 'Help for [i]Item 2[/i]'),
+            ('Item 3', 'Help for [b]Item 3[/b]'),
+            # ... Add more items as required ...
+        ])
+        
+        for key, value in items.items():
+            lbl = Label(text=f"{key}: {value}", size_hint_y=None, height=44, markup=True)
+            popup.ids.scroll_content.add_widget(lbl)
+        
+        popup.open()
+
+if __name__ == '__main__':
+    MainApp().run()
+
+
+sys.exit(0)
+
+# KV language string
+kv = '''
+<PopupHelp>:
+    title: 'Help'
+    title_align: 'center'
+    size_hint: .5, .5
+    BoxLayout:
+        id: content
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+        ScrollView:
+            id: scroll
+            bar_width: 10
+            scroll_type: ['bars', 'content']
+            BoxLayout:
+                id: scroll_content
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+
+BoxLayout:
+    orientation: 'vertical'
+    Button:
+        text: 'Show Popup'
+        size_hint: (None, None)
+        size: (200, 50)
+        pos_hint: {'center_x': 0.5}
+        on_press: app.show_popup()
+'''
+
+# Load the KV string
+Builder.load_string(kv)
+
+class PopupHelp(Popup):
+    pass
+
+class MainApp(App):
+    def build(self):
+        return self.root
+
+    def show_popup(self):
+        popup = PopupHelp()
+        items = OrderedDict([
+            ('Item 1', 'Help for [color=ff3333]Item 1[/color]'),
+            ('Item 2', 'Help for [i]Item 2[/i]'),
+            ('Item 3', 'Help for [b]Item 3[/b]'),
+            # ... Add more items as required ...
+        ])
+        
+        for key, value in items.items():
+            lbl = Label(text=f"{key}: {value}", size_hint_y=None, height=44, markup=True)
+            popup.ids.scroll_content.add_widget(lbl)
+        
+        popup.open()
+
+if __name__ == '__main__':
+    MainApp().run()
+
+sys.exit(0)
+
+# Define custom MarkupLabel
+class MarkupLabel(Label):
+    markup = BooleanProperty(True)
+
+class PopupHelp(Popup):
+    pass
+
+class MainApp(App):
+    
+    def build(self):
+        layout = BoxLayout(orientation='vertical')
+        btn = Button(text='Show Popup', size_hint=(None, None), size=(200, 50), pos_hint={'center_x': 0.5})
+        btn.bind(on_press=self.show_popup)
+        layout.add_widget(btn)
+        return layout
+
+    def show_popup(self, instance):
+        popup = PopupHelp()
+
+        # Using OrderedDict to maintain the order
+        items = OrderedDict([
+            ('Item 1', 'Help for [color=ff3333]Item 1[/color]'),
+            ('Item 2', 'Help for [i]Item 2[/i]'),
+            ('Item 3', 'Help for [b]Item 3[/b]'),
+            # ... Add more items as required ...
+        ])
+        
+        for key, value in items.items():
+            lbl = Label(text=f"[b]{key}:[/b] {value}", size_hint_y=None, height=44, markup=True)
+            # lbl = MarkupLabel(text=f"{key}: {value}", size_hint_y=None, height=44)
+            popup.ids.scroll_content.add_widget(lbl)
+        
+        popup.open()
+
+if __name__ == '__main__':
+    MainApp().run()
+
+
+
+
+sys.exit(0)
+
+class MainApp(App):
+    
+    def build(self):
+        layout = BoxLayout(orientation='vertical')
+        btn = Button(text='Show Popup', size_hint=(None, None), size=(200, 50), pos_hint={'center_x': 0.5})
+        btn.bind(on_press=self.show_popup)
+        layout.add_widget(btn)
+        
+        return layout
+
+    def show_popup(self, instance):
+        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # Create a scrollable list of items
+        scroll_content = BoxLayout(orientation='vertical', size_hint_y=None)
+        items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5',
+                 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10']
+        
+        # The height should be adjusted based on the number of items and their individual height.
+        scroll_content.bind(minimum_height=scroll_content.setter('height'))
+        
+        for item in items:
+            lbl = Label(text=item, size_hint_y=None, height=44)
+            scroll_content.add_widget(lbl)
+        
+        scroll_view = ScrollView()
+        scroll_view.bar_width = 10
+        scroll_view.scroll_type = ['bars', 'content']
+
+        scroll_view.add_widget(scroll_content)
+        content.add_widget(scroll_view)
+        
+        close_btn = Button(text='Close', size_hint=(None, None), size=(150, 50))
+        content.add_widget(close_btn)
+        
+        popup = Popup(title='List of Items', content=content, size_hint=(None, None), size=(400, 500))
+        close_btn.bind(on_press=popup.dismiss)
+        popup.open()
+
+if __name__ == '__main__':
+    MainApp().run()
+
+
+sys.exit(0)
+
+# from kivy.app import App
+# from kivy.lang import Builder
+# from kivy.core.window import Window
+# from kivy.metrics import sp, Metrics
+# from kivy.properties import NumericProperty
+
+# # Make the function available in KV language.
+# resizabletext = """
+# BoxLayout:
+#     orientation: 'vertical'
+#     Label:
+#         text: 'Dynamically resizing text'
+#         font_size: app.font_size
+#     Button:
+#         text: 'Another widget'
+#         size_hint_y: None
+#         height: app.font_size * 2
+
+# """
+
+
+
+# class ResizableTextApp(App):
+#     font_size = NumericProperty(sp(15))  # Default value
+
+#     def build(self):
+#         # Bind to the window's size change event
+#         Window.bind(size=self.update_font_size)
+#         return Builder.load_string(resizabletext)
+
+#     def update_font_size(self, instance, value):
+#         base_font_size = 15  # A default base size
+#         scale_factor = Metrics.density  # Assuming 1000 is the width at which base_font_size looks best
+#         self.font_size = sp(base_font_size * scale_factor)
+
+# ResizableTextApp().run()
+
+
+
+# sys.exit(0)
+
+# from pynput.mouse import Button, Controller
+
+# mouse = Controller()
+
+# # Read pointer position
+# print('The current pointer position is {0}'.format(
+#     mouse.position))
+
+# sys.exit(0)
+
+
+def print_dpi():
+    import ctypes
+    import win32api
+    import screeninfo
+
+    PROCESS_PER_MONITOR_DPI_AWARE = 2
+    MDT_EFFECTIVE_DPI = 0
+
+    monitors_info = screeninfo.get_monitors()
+
+    # monitors_info = screeninfo.get_monitors()
+    shcore = ctypes.windll.shcore
+    monitors = win32api.EnumDisplayMonitors()
+    # hresult = shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
+    # assert hresult == 0
+    dpiX = ctypes.c_uint()
+    dpiY = ctypes.c_uint()
+    for i, monitor in enumerate(monitors):
+        shcore.GetDpiForMonitor(
+            monitor[0].handle,
+            MDT_EFFECTIVE_DPI,
+            ctypes.byref(dpiX),
+            ctypes.byref(dpiY)
+        )
+        print(
+            f"Monitor {i} (hmonitor: {monitor[0]}) = dpiX: {dpiX.value}, dpiY: {dpiY.value}"
+        )
+
+
+if __name__ == "__main__":
+    print_dpi()
+
+sys.exit(0)
+from kivy.config import Config
+Config.set('graphics', 'multisamples', '4')
+
+from kivy.app import App
+from kivy.uix.widget import Widget
+from kivy.graphics import Line
+
+class LineApp(App):
+    def build(self):
+        root = Widget()
+        with root.canvas:
+            Line(points=[10, 10, 300, 300], width=20)
+        return root
+
+LineApp().run()
+
+
+sys.exit(0)
+
+from screeninfo import get_monitors
+import pyautogui
+
+# Get monitor information
+monitors = get_monitors()
+
+# Loop through all available monitors and take screenshots
+for i, monitor in enumerate(monitors):
+    left = monitor.x
+    top = monitor.y
+    width = monitor.width
+    height = monitor.height
+    
+    screenshot = pyautogui.screenshot(region=(left, top, width, height))
+    screenshot.save(f"screenshot_monitor_{i + 1}.png")
+
+
+sys.exit(0)
+
+from kivy.app import App
+from kivy.uix.label import Label
+from kivy.metrics import Metrics
+
+class MyApp(App):
+
+    def build(self):
+        return Label(text=f'DPI: {Metrics.dpi}')
+
+if __name__ == '__main__':
+    MyApp().run()
+
+sys.exit(0)
 
 class Person:
     def greet(self, greeting="salutations"):

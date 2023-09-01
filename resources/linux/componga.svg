@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="299px" height="299px" viewBox="-0.5 -0.5 299 299" content="&lt;mxfile&gt;&lt;diagram name=&quot;Page-1&quot; id=&quot;Fm0VDzHt-ju9al6D2IDV&quot;&gt;tZVNj5swEIZ/TY5BgAOhx002pJXaqlIOlXqpjBnAuwYj411If32HYL5CVulKWw7IfsYf+H1nzIrs8+aoaJl9kzGIlWvHzYo8rlz305bguwXnDmwdvwOp4nGHnBGc+B8w0Db0hcdQzQZqKYXm5RwyWRTA9IxRpWQ9H5ZIMd+1pCkswIlRsaQ/eayzjgaePfLPwNOs39mxTSSn/WADqozGsp4gcliRvZJSd6282YNotet16eaFb0SHD1NQ6H+Z8KshX17zo4TvT2Xi/l6XXnhcm1VeqXgxBzYfq8+9ArgKio2dXZ1xDaeSsjZSo93IMp0L7DnYpFXZOZDwBnDTnZKaai4LROuNhyDhQuylkOqyMokpBAlDXmkln2ES8VkAUYKRVNGY4wEnMfuReCEecrcUoD8NKA3NBBlBjiBz0OqMQ0yU9GlmsnNIu3r0emDZxOcBUpNf6bD2aAE2jAvvcMS97whmUtk2q5prlt035iOE2lwJhX5eC+V4N4RyNv9LKHJfqPZ8HGv5K41A/JAVN9kYSa1ljsr0Ax4ET9uAllfS9VLnTdpeb1ZEK84slBIzsmCHoTQqjeihSC8725bbZjsU8UguBaJYf4fY1o16SAIG7GY9RIG3QXVv1kMY2vhclZtvf5DvgWt5c+cDYm2X5vve0nt/mPsO87E73omX2OTHQg5/AQ==&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <defs>
+        <linearGradient x1="0%" y1="0%" x2="0%" y2="100%" id="mx-gradient-dae8fc-1-0d35ff-1-s-0">
+            <stop offset="0%" style="stop-color: rgb(218, 232, 252); stop-opacity: 1;"/>
+            <stop offset="100%" style="stop-color: rgb(13, 53, 255); stop-opacity: 1;"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="0%" x2="0%" y2="100%" id="mx-gradient-f8cecc-1-ff0000-1-s-0">
+            <stop offset="0%" style="stop-color: rgb(248, 206, 204); stop-opacity: 1;"/>
+            <stop offset="100%" style="stop-color: rgb(255, 0, 0); stop-opacity: 1;"/>
+        </linearGradient>
+    </defs>
+    <g>
+        <ellipse cx="149" cy="149" rx="105" ry="105" fill="url(#mx-gradient-dae8fc-1-0d35ff-1-s-0)" stroke="#6c8ebf" transform="rotate(-45,149,149)" pointer-events="all"/>
+        <path d="M 74 79 Q 149 149 224 79 Q 149 149 224 219 Q 149 149 74 219 Q 149 149 74 79" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 181.5 149 C 181.5 163.45 171.2 176.01 156.59 179.39 C 141.98 182.76 126.86 176.06 120.04 163.19 C 113.22 150.31 116.47 134.62 127.89 125.24 C 139.32 115.85 155.95 115.23 168.1 123.72 L 158.55 136.36 C 152.47 132.11 144.16 132.43 138.45 137.12 C 132.73 141.81 131.11 149.66 134.52 156.09 C 137.93 162.53 145.49 165.88 152.79 164.19 C 160.1 162.51 165.25 156.22 165.25 149 Z" fill="url(#mx-gradient-f8cecc-1-ff0000-1-s-0)" stroke="#b85450" stroke-miterlimit="10" transform="rotate(-60,149,149)" pointer-events="all"/>
+    </g>
+</svg>

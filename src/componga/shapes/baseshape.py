@@ -1,37 +1,10 @@
-from kivy.uix.widget import Widget
 from kivy.graphics import Color, Line
-from kivy.animation import Animation
 from kivy.graphics.boxshadow import BoxShadow
 from kivy.properties import BooleanProperty, ObjectProperty
 from kivy.vector import Vector
+from kivy.animation import Animation
+from kivy.uix.widget import Widget
 from kivy.uix.floatlayout import FloatLayout
-
-from kivy.uix.effectwidget import EffectWidget
-
-from kivy.uix.effectwidget import (MonochromeEffect,
-                                   InvertEffect,
-                                   ChannelMixEffect,
-                                   ScanlinesEffect,
-                                   FXAAEffect,
-                                   PixelateEffect,
-                                   HorizontalBlurEffect,
-                                   VerticalBlurEffect)
-import sys
-sys.path.append("..") 
-
-from experimental.chroma import *
-
-class ShapeEffect(EffectWidget):
-    def add_widget(self, shape, *args, **kwargs):
-        self.shape = shape
-        self.bind(on_touch_down=shape.on_touch_down)
-        self.bind(on_touch_move=shape.on_touch_move)
-        self.bind(on_touch_up=shape.on_touch_up)
-        self.cancel_fade = shape.cancel_fade
-        self.fade_shape = shape.fade_shape
-
-        return super().add_widget(shape, *args, **kwargs)
-
 
 class BaseShape(Widget):
     shape_faded = BooleanProperty(False)

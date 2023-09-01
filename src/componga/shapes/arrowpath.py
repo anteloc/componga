@@ -1,7 +1,7 @@
 import math
-from .path import Path
 from kivy.graphics import Line
 from kivy.vector import Vector
+from .path import Path
 
 class ArrowPath(Path):
     def __init__(self, *args, **kwargs):

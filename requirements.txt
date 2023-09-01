@@ -1,0 +1,6 @@
+Kivy[full]==2.2.1
+mss==9.0.1
+mouse==0.7.1
+pyinstaller==5.13.2
+Pillow==10.0.0
+

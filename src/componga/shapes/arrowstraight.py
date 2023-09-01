@@ -1,7 +1,7 @@
 import math
-from .linestraight import LineStraight
 from kivy.graphics import Line
 from kivy.vector import Vector
+from .linestraight import LineStraight
 
 class ArrowStraight(LineStraight):
     def __init__(self, *args, **kwargs):

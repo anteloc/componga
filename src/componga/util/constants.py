@@ -37,6 +37,21 @@ DEFAULT_CONFIG_SECTIONS = [
             'select_rectangle': 'r',
             'select_path': 'p'
         }
+    },
+    {
+        'name': 'keyboard.shortcuts.help',
+        'options': {
+            'freeze': 'Disable shape fading',
+            'update_background': 'Refresh desktop image',
+            'exit': 'Exit Componga',
+            'select_blip': 'Select Blip tool',
+            'select_arrow_path': 'Select ArrowPath tool',
+            'select_arrow_straight': 'Select ArrowStraight tool',
+            'select_line_straight': 'Select LineStraight tool',
+            'select_ellipse': 'Select Ellipse tool',
+            'select_rectangle': 'Select Rectangle tool',
+            'select_path': 'Select Path tool'
+        }
     }
 ]
 

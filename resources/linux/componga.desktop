@@ -1,0 +1,17 @@
+[Desktop Entry]
+
+Type=Application
+Name=Componga
+
+# Tooltip comment to show in menus.
+Comment=Screen annotation graphic tool 
+
+# The path (folder) in which the executable is run
+Path=/opt/componga
+
+# The executable (can include arguments)
+Exec=/opt/componga/componga-linux
+
+# The icon for the entry, using the name from `hicolor/scalable` without the extension.
+# You can also use a full path to a file in /opt.
+Icon=componga

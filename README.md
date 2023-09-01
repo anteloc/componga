@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/fr7g37cfooy4hq73/branch/main?svg=true)](https://ci.appveyor.com/project/anteloc/componga/branch/main)
+[![Build status](https://ci.appveyor.com/api/projects/status/fr7g37cfooy4hq73?svg=true)](https://ci.appveyor.com/project/anteloc/componga)
 # componga
 Screen drawing app for presentations
 
@@ -5,11 +7,15 @@ Screen drawing app for presentations
 
 Linux installation:
 
+Tested with: python v3.10
+
 ```
 pip install kivy
 pip install pyautogui
 pip install mss
 ```
+
+See: requirements.txt for the exact versions used for developing the app.
 
 Now, clone the repo for this project:
 

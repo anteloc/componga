@@ -1,63 +1,54 @@
-import sys
-import tempfile
-import math
-import mss.tools
-from util.functions import find_current_monitor, desktop_screenshot, find_shape_type
+import platform
 
-# Capture desktop screen first, to avoid capturing the kivy windows themselves
-app_monitor = find_current_monitor()
-desktop_background = desktop_screenshot(app_monitor)
+OS = platform.system().lower()
+
+from componga.util.functions import *
 
 from kivy.config import Config
+if  OS != "windows":
+    # On Windows OS, for some reason, hiding the window causes 
+    # in some circumstances the app to crash due to "0" values in
+    # properties like width, height, etc.
+    Config.set('graphics', 'window_state', 'hidden')
 # Disable config: %(name)s = probesysfs
 # since it causes touchpad behave like it's a touchscreen
 Config.set('input', '%(name)s', None)
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
-# These are problematic, for some configurations they don't work for multiple monitors
-# Config.set('graphics', 'left', mon['left'])
-# Config.set('graphics', 'top', mon['top'])
-# Config.set('graphics', 'width', mon['width'])
-# Config.set('graphics', 'height', mon['height'])
-# Config.set('graphics', 'fullscreen', 1)
+Config.set('graphics', 'multisamples', '10')
 
-from PIL import Image as PImage
+from PIL import Image as PImage, ImageGrab
 import kivy
+from kivy.logger import Logger
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.lang import Builder
 from kivy.properties import ListProperty, ObjectProperty, StringProperty, NumericProperty, BooleanProperty, OptionProperty, DictProperty, AliasProperty, BoundedNumericProperty, VariableListProperty, ReferenceListProperty, NumericProperty
-from kivy.graphics import Color, Rectangle as KivyRectangle, Ellipse as KivyEllipse
-from kivy.graphics.texture import Texture
+from kivy.graphics import Line, Color, Rectangle as KivyRectangle, Ellipse as KivyEllipse
+from kivy.animation import Animation
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
 from kivy.uix.colorpicker import ColorPicker, ColorWheel
-from kivy.graphics import Line, Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.core.window import Window
-from kivy.animation import Animation
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
-from constants.constants import *
-from shapes.linestraight import LineStraight
-from shapes.arrowstraight import ArrowStraight
-from shapes.arrowpath import ArrowPath
-from shapes.ellipse import Ellipse
-from shapes.path import Path
-from shapes.rectangle import Rectangle
-from shapes.blip import Blip
-
+from componga.util.constants import *
+from componga.shapes import *
+from componga.util.screenshot import BackgroundScreenshotHandler
+from kivy.core.window import Window
+from kivy.metrics import sp, Metrics
 
 class ShapeViewport(FloatLayout):
     shape = ObjectProperty(None)
     
+from kivy.uix.slider import Slider
 class PopupMenu(Popup):
-    shape_color = ListProperty((0, 0, 0, 1))
+    font_size = NumericProperty(sp(15))
+    shape_color = ListProperty((0, 0, 0, 0))
     shape_type = StringProperty(DEFAULT_SHAPE)
     line_width = NumericProperty(DEFAULT_SHAPE_LINE_WIDTH)
     min_line_width = NumericProperty(MIN_SHAPE_LINE_WIDTH)
     max_line_width = NumericProperty(MAX_SHAPE_LINE_WIDTH)
+    show_help = BooleanProperty(False)
     
     def __init__(self, shape_color, shape_type, line_width, min_line_width, max_line_width, **kwargs):
         super(PopupMenu, self).__init__(**kwargs)
@@ -67,14 +58,58 @@ class PopupMenu(Popup):
         self.min_line_width = min_line_width
         self.max_line_width = max_line_width
 
+    def on_show_help(self, *args):
+        if self.show_help:
+            help_popup = PopupHelp()
+            help_popup.open()
+            self.show_help = False
+
+from kivy.uix.label import Label
+from kivy.core.text.markup import MarkupLabel
+from collections import OrderedDict
+
+class PopupHelp(Popup):
+    font_size = NumericProperty(sp(18))
+
+    def __init__(self, *args, **kwargs):
+        super(PopupHelp, self).__init__(*args, **kwargs)
+        shortcuts_opts = app.config.options('keyboard.shortcuts')
+
+        exit_key = app.config.get('keyboard.shortcuts', 'exit')
+        exit_help = app.config.get('keyboard.shortcuts.help', 'exit')
+
+        lbl = Label(text=f"[b]{exit_key}:[/b] {exit_help}", size_hint_y=None, height=44, markup=True)
+        self.ids.scroll_content.add_widget(lbl)
+
+        mouse_opts = OrderedDict([
+                                    ('Mouse Left Click', 'Draw shape'),
+                                    ('Mouse Right Click', 'Popup menu'),
+                                    ('Mouse Wheel Up/Down', 'Select another shape'),
+                                    ('Mouse Shift + Mouse Wheel Up/Down', 'Change line thickness')
+                                ])
+
+        for mouse_key, mouse_help in mouse_opts.items():
+            lbl = Label(text=f"[b]{mouse_key}:[/b] {mouse_help}", size_hint_y=None, height=44, markup=True)
+            self.ids.scroll_content.add_widget(lbl)
+
+        for key in shortcuts_opts:
+            if key == 'exit':
+                continue
+            shortcut_key = app.config.get('keyboard.shortcuts', key)
+            shortcut_help = app.config.get('keyboard.shortcuts.help', key)
+
+            lbl = Label(text=f"[b]{shortcut_key}:[/b] {shortcut_help}", size_hint_y=None, height=44, markup=True)
+            self.ids.scroll_content.add_widget(lbl)
+
 
 class DrawSurface(FloatLayout):
     
-    def __init__(self, monitor, desktop_background, **kwargs):
+    background = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
         super(DrawSurface, self).__init__(**kwargs)
-        self._monitor = monitor
         self._menu = None
-        self._desktop_bg = None
+        self.background = None
         self._pressed_keycodes = set()
 
         self._prev_shapes = []
@@ -94,7 +129,12 @@ class DrawSurface(FloatLayout):
         self._load_shortcuts()
         self._load_shape_attributes()
 
-        self._update_background(new_background=desktop_background)
+        self._bg_handler = None
+
+    def post_init(self):
+        # Take the first background screenshot here, after app window is created and properly initialized
+        self._bg_handler = BackgroundScreenshotHandler(self)
+        self._bg_handler.take_screenshot()
 
     def _load_shortcuts(self):
         # Is there a better way to do this? Get the options as a dict?
@@ -127,28 +167,18 @@ class DrawSurface(FloatLayout):
         self._shape_color = eval(app.config.get(sect, 'shape_color'))
         self._shape_fade_duration = app.config.getfloat(sect, 'shape_fade_duration')
 
-    def _update_background(self, new_background=None):
+    def _update_background(self):
+        if self.background:
+            self.background.close()
 
-        # Remove the previous background temp file, if needed
-        if self._desktop_bg:
-            self._desktop_bg.close()
-        
-        if new_background:
-            bg = new_background
-        else:
-            # This is a workaround: the events on_hide, on_minimize, etc.
-            # are not working as expected: the OS window reports that it's 
-            # hidden or minimized, but the Kivy window is still visible
-            # and the kivy window is also captured in the screenshot
+        self._bg_handler.take_screenshot()
 
-            # Window.bind(on_minimize=self._desktop_screenshot)
-            Window.minimize()
-            # XXX If the OS takes longer than 0.25 seconds to minimize the window,
-            # the kivy window will be captured in the screenshot.
-            # OTOH, increasing the delay will make the app less responsive
-            Clock.schedule_once(self._desktop_screenshot, 0.25)
-            return
-                                    
+    def on_background(self, *args):
+        self._set_background(self.background)
+
+    def _set_background(self, new_background):
+
+        bg = new_background            
         bg_size = PImage.open(bg.name).size
         
         with self.canvas.before:
@@ -157,17 +187,7 @@ class DrawSurface(FloatLayout):
             Color(1, 0, 0, 1)
             Line(rectangle=(0, 0, *bg_size), width=5)
 
-        self._desktop_bg = bg
-
-    def _win_info(self):
-        # Used for debugging only
-        print(f"self.size: {self.size}. self.pos: {self.pos}. ")
-        print(f"size: {Window.system_size}. position: {Window.position} fullscreen: {Window.fullscreen}")
-
-    def _desktop_screenshot(self, *args):
-        bg = desktop_screenshot(self._monitor)
-        Window.restore()
-        self._update_background(new_background=bg)
+        self.background = bg
 
     def on_key_down(self, _keyboard, keycode, _text, _modifiers):
         kcode = keycode[1]
@@ -184,7 +204,7 @@ class DrawSurface(FloatLayout):
             if cmd == 'freeze':
                 self._toggle_freeze()
             elif cmd == 'update_background':
-                self._desktop_screenshot()
+                self._update_background()
             elif cmd == 'exit':
                 self.exit_app()
                 
@@ -194,12 +214,15 @@ class DrawSurface(FloatLayout):
             self.on_shape_type(None, shape_type)
             self._show_shape_preview()
 
+        elif kcode == '1':
+            app._win_info("on_key_down")
+
         return True
     
     def exit_app(self):
         # Cleanup resources before exiting
-        if self._desktop_bg:
-            self._desktop_bg.close()
+        if self.background:
+            self.background.close()
 
         app.stop()
     
@@ -274,11 +297,11 @@ class DrawSurface(FloatLayout):
         
         # Create a new shape instance of the current type
         self._current_shape = self._shape_constructor(start_point, 
-                                                        self._shape_color, 
-                                                        self._shape_line_width,
-                                                        fade_duration=self._shape_fade_duration,
-                                                        is_shadowed=True,
-                                                        is_frozen=self._freeze)
+                                                      self._shape_color, 
+                                                      self._shape_line_width,
+                                                      fade_duration=self._shape_fade_duration,
+                                                      is_shadowed=True,
+                                                      is_frozen=self._freeze)
         
         self._current_shape.bind(shape_faded=self.on_shape_faded)
 
@@ -343,20 +366,17 @@ class DrawSurface(FloatLayout):
         self._shape_color = value
         app.config.set('shapes.attributes', 'shape_color', value)
 
-        if self._shape_viewport:
-            self._build_shape_preview()
+        self._show_shape_preview()
 
     def on_shape_type(self, _, value):
         self._shape_type = value
         self._shape_constructor = eval(value)
         app.config.set('shapes.attributes', 'shape_type', value)
 
-        if self._shape_viewport:
-            self._build_shape_preview()
+        self._show_shape_preview()
 
     def _build_shape_preview(self):
         # FIXME Shadows in preview shapes are not working
-
         return self._shape_constructor((0,0), 
                                         self._shape_color, 
                                         self._shape_line_width, 
@@ -378,21 +398,28 @@ class DrawSurface(FloatLayout):
         self._shape_line_width = value
         app.config.set('shapes.attributes', 'shape_line_width', value)
 
-        if self._shape_viewport:
-            self._build_shape_preview()
+        self._show_shape_preview()
 
 
 class CompongaApp(App):
 
-    def build(self):
+    def on_start(self):
+        self.root_window.title = self.title
+        Logger.debug(f"self.root_window: {self.root_window}")
         self.config.add_callback(self.on_config_change)
-        self._setup_window()
-
-        self._draw_surface = DrawSurface(monitor=app_monitor, 
-                                         desktop_background=desktop_background,
-                                         pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        self.monitor, self.monitor_unsc = find_current_monitor_info()
         
+        self._fullscreen()
         self._setup_keyboard()
+
+        self._draw_surface.post_init()
+
+    def build(self):
+        Config.set('kivy', 'log_level', 'debug')
+        self.title = "Componga"
+        self._draw_surface = DrawSurface(pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        self.monitor = None
+        self.monitor_unsc = None
 
         return self._draw_surface
     
@@ -401,18 +428,48 @@ class CompongaApp(App):
         for section in DEFAULT_CONFIG_SECTIONS:
             config.setdefaults(section['name'], section['options'])
 
-    def on_config_change(self, *args, **kwargs):
-        print(f"on_config_change: {args}, {kwargs}")
-        self.config.write()
+    def get_application_config(self):
+        self._bootstrap_config()
+
+        return super(CompongaApp, self).get_application_config(
+            '~/.componga/%(appname)s.ini')
     
-    def _setup_window(self):
-        Window.fullscreen = True 
-        Window.left, Window.top = app_monitor['left'], app_monitor['top']
-        Window.size = (app_monitor['width'], app_monitor['height'])
+    def _bootstrap_config(self):
+        home_directory = os.path.expanduser( '~' )
+        config_dir = os.path.join( home_directory, '.componga')
+        
+        if not os.path.exists(config_dir):
+            os.makedirs(config_dir)
+
+
+    def on_config_change(self, *args, **kwargs):
+        self.config.write()
+
+    def _fullscreen(self):
+        if OS == "linux":
+            self.root_window.fullscreen = 'auto'
+        elif OS == "darwin":
+            # TODO Fullscreen custom config for OSX
+            pass
+        elif OS == "windows":
+            pass
+        else:
+            raise Exception(f"OS {OS} not supported - Unable to set window to fullscreen")
+        
+        self._position_window()
+        self._resize_window()
+        # self.root_window.show()
+        self._win_info("on_start")
+    
+    def _position_window(self):
+        self.root_window.left, self.root_window.top = self.monitor['left'], self.monitor['top']
+
+    def _resize_window(self):
+        self.root_window.system_size = (self.monitor_unsc['width'], self.monitor_unsc['height'])
 
     def _setup_keyboard(self):
         # Bind the keyboard to the on_key_down function
-        self._keyboard = Window.request_keyboard(self._keyboard_closed, self._draw_surface)
+        self._keyboard = self.root_window.request_keyboard(self._keyboard_closed, self._draw_surface)
         self._keyboard.bind(on_key_down=self._draw_surface.on_key_down,
                             on_key_up=self._draw_surface.on_key_up)
 
@@ -421,8 +478,24 @@ class CompongaApp(App):
         self._keyboard.unbind(on_key_down=self._draw_surface.on_key_down)
         self._keyboard = None
 
-app = None  
-    
-if __name__ == "__main__":
+    def _win_info(self, prefix=""):
+        # Used for debugging only
+        import kivy.metrics
+
+        dpis = kivy.metrics.Metrics.dpi
+        density = kivy.metrics.Metrics.density
+
+        Logger.debug(f"""[{prefix}] 
+              monitor: {self.monitor or 'N/A'}, monitor_unsc: {self.monitor_unsc or 'N/A'}
+              Metrics dpis: {dpis}, Metrics density: {density}, Window dpi: {self.root_window.dpi}
+              Window: left: {self.root_window.left}, top: {self.root_window.top}
+              width: {self.root_window.width}, height: {self.root_window.height}
+              system_size: {self.root_window.system_size}, size: {self.root_window.size}
+              position: {self.root_window.position}, fullscreen: {self.root_window.fullscreen}
+              """)
+
+
+def main():
+    global app
     app = CompongaApp()
     app.run()

@@ -1,6 +1,6 @@
-from .baseshape import BaseShape
 from kivy.graphics import Line
 from kivy.vector import Vector
+from .baseshape import BaseShape
 
 class Ellipse(BaseShape):
 
@@ -17,7 +17,7 @@ class Ellipse(BaseShape):
 
         with self.canvas:
             self.ellipse_line = Line(ellipse=self._compute_ellipse(), 
-                                width=self.line_width)
+                                     width=self.line_width)
 
     def on_touch_move(self, touch):
         super().on_touch_move(touch)

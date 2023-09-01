@@ -1,0 +1,142 @@
+version: 0.0.{build}
+
+branches:
+  only:
+  - release-chores
+
+# image:
+# - Ubuntu2004
+# - Visual Studio 2022
+
+environment:
+  matrix:
+    - job_name: Windows build
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+
+    - job_name: Linux build
+      job_depends_on: Windows build
+      APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
+
+matrix:
+  fast_finish: true
+
+for:
+  -
+    matrix:
+      only:
+        - job_name: Windows build
+          APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+
+    init:
+    - cmd: >-
+        echo Initializing Windows build
+
+        set KIVY_GL_BACKEND=angle_sdl2
+
+    install:
+    - cmd: >-
+        C:\Python310-x64\Scripts\virtualenv.exe componga_venv
+
+        componga_venv\Scripts\activate.bat
+
+        python --version
+
+        pip --version
+        
+        pip install -r requirements.txt
+    
+    build_script:
+    - cmd: >-
+        md windows-build
+
+        copy scripts\windows\componga-windows.spec windows-build
+        
+        copy scripts\windows\CMakeLists.txt windows-build
+
+        cd windows-build
+
+        python -m PyInstaller --log-level INFO --noconfirm componga-windows.spec
+
+        copy CMakeLists.txt .\dist\componga-windows\
+
+        cmake -G "Ninja" .\dist\componga-windows\
+
+        cpack
+    
+    artifacts:
+    - path: windows-build/componga-$(APPVEYOR_BUILD_VERSION)-windows.msi
+      name: componga-windows
+
+  -
+    matrix:
+      only:
+        - job_name: Linux build
+          APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
+
+    init:
+    - sh: >-
+        echo 'Initializing Linux build'
+
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+
+    install:
+    - sh: >-
+        source $HOME/venv3.10.12/bin/activate
+
+        python --version
+
+        rvm use ruby-2.7.2
+
+        ruby --version
+
+        gem install fpm
+
+        pip install -r requirements.txt
+
+    build_script:
+    - sh: >-
+        mkdir linux-build
+
+        cp scripts/linux/componga-linux.spec linux-build/
+
+        cd linux-build
+
+        python -m PyInstaller --log-level INFO --noconfirm componga-linux.spec
+
+        mkdir -p package/opt
+
+        mkdir -p package/usr/share/applications
+
+        mkdir -p package/usr/share/icons/hicolor/scalable/apps
+
+        cp -r dist/componga-linux package/opt/componga/
+
+        cp ../resources/linux/componga.desktop package/usr/share/applications
+
+        cp ../resources/linux/componga.svg package/usr/share/icons/hicolor/scalable/apps/componga.svg
+
+        find package/opt/componga -type f -exec chmod 644 -- {} +
+
+        find package/opt/componga -type d -exec chmod 755 -- {} +
+
+        find package/usr/share -type f -exec chmod 644 -- {} +
+
+        chmod +x package/opt/componga/componga-linux
+
+        fpm --maintainer 'anteloc' --description 'Screen annotation graphic tool' -C package -s dir -t deb -n "componga" -v "$APPVEYOR_BUILD_VERSION" -p componga-$APPVEYOR_BUILD_VERSION-linux.deb
+
+    artifacts:
+    - path: linux-build/componga-$(APPVEYOR_BUILD_VERSION)-linux.deb
+      name: componga-linux
+
+test: false
+
+deploy:
+- provider: GitHub
+  tag: componga-$(APPVEYOR_BUILD_VERSION)
+  description: First release
+  auth_token:
+    secure: 7xxu+dL9DyNn+8eqFS5/ZngkNMGIIYZKCY5sMM8I2cqtxe6A5G6HPS9c/kk19wdv
+  draft: true
+  prerelease: true
+  force_update: true
