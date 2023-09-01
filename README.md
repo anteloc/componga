@@ -23,7 +23,7 @@ And checkout the branch:
 $ git checkout kivy-port
 ```
 
-# Running 
+## Running 
 Start the app by running:
 
 ```
@@ -31,14 +31,25 @@ cd src/componga-kivy
 python kivy___main__.py
 ```
 
-Control:
-- Mouse:
+## Control:
+- _Mouse:_
     - **Left click**: draw shape
     - **Right click**: popup menu
     - **Mouse wheel up/down**: select another shape
     - **Shift + mouse wheel up/down**: change line thickness
-- Keyboard:
-    - **u**: (u)pdate desktop image
-    - **f**: (f)reeze/unfreeze fading shapes
-    - **Esc**: exit app
+- _Keyboard defaults:_
+    - **f**: freeze
+    - **u**: update background
+    - **escape**: exit
+    - **b**: select blip
+    - **a**: select arrow path
+    - **s**: select arrow straight
+    - **l**: select line straight
+    - **e**: select ellipse
+    - **r**: select rectangle
+    - **p**: select path
+- _Configuration:_
+    - Last shape selected, color and line width are saved automatically
+    - To change the configuration, edit the `componga.ini` file
+
 
