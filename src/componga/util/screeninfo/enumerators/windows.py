@@ -4,6 +4,9 @@ from componga.util.screeninfo.common import Monitor
 
 
 def enumerate_monitors() -> T.Iterable[Monitor]:
+    from kivy.logger import Logger
+    Logger.debug(f"windows enumerate_monitors()")
+
     import ctypes
     import ctypes.wintypes
 

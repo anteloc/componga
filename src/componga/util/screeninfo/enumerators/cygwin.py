@@ -2,8 +2,11 @@ import typing as T
 
 from componga.util.screeninfo.common import Monitor
 
-
 def enumerate_monitors() -> T.Iterable[Monitor]:
+
+    from kivy.logger import Logger
+    Logger.debug(f"cygwin enumerate_monitors()")
+
     import ctypes
 
     LONG = ctypes.c_int32

@@ -33,7 +33,7 @@ DEFAULT_CONFIG_SECTIONS = [
             'select_arrow_path': 'a',
             'select_arrow_straight': 's',
             'select_line_straight': 'l',
-            'select_ellipse': 'e',
+            'select_ellipse': 'o',
             'select_rectangle': 'r',
             'select_path': 'p'
         }

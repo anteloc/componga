@@ -10,7 +10,7 @@ import sys
 if OS == 'windows' and hasattr(sys, '_MEIPASS'):
     os.environ['KIVY_NO_CONSOLELOG'] = '1'
 
-from componga.componga import main
+from componga.app import main
     
 if __name__ == "__main__":
     main()

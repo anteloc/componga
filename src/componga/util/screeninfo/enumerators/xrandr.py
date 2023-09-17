@@ -5,6 +5,9 @@ from componga.util.screeninfo.common import Monitor, ScreenInfoError, calculate_
 
 
 def enumerate_monitors() -> T.Iterable[Monitor]:
+    from kivy.logger import Logger
+    Logger.debug(f"xrandr enumerate_monitors()")
+
     import ctypes
     import ctypes.util
 

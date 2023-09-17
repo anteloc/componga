@@ -10,6 +10,9 @@ def check_primary(screens: T.Any, screen: T.Any) -> bool:
 
 
 def enumerate_monitors() -> T.Iterable[Monitor]:
+    from kivy.logger import Logger
+    Logger.debug(f"osx enumerate_monitors()")
+
     from AppKit import NSScreen, NSDeviceResolution
 
     screens = NSScreen.screens()

@@ -2,8 +2,10 @@ import typing as T
 
 from componga.util.screeninfo.common import Monitor, ScreenInfoError
 
-
 def enumerate_monitors() -> T.Iterable[Monitor]:
+    from kivy.logger import Logger
+    Logger.debug(f"xinerama enumerate_monitors()")
+
     import ctypes
 
     from componga.util.screeninfo.util import load_library

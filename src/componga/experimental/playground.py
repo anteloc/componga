@@ -4,6 +4,92 @@ from kivy.config import Config
 # since it causes touchpad behave like it's a touchscreen
 Config.set('input', '%(name)s', None)
 ############################################
+from kivy.app import App
+from kivy.uix.scatterlayout import ScatterLayout
+from kivy.uix.button import Button
+from kivy.animation import Animation
+from kivy.clock import Clock
+from kivy.lang import Builder
+
+# Load the kv string
+Builder.load_string("""
+<TouchAwareButton@Button>:
+    on_touch_down:
+        self.collide_point(*args[1].pos) and self.dispatch('on_press')
+""")
+
+class AnimatedScatterApp(App):
+    def build(self):
+        # Create a ScatterLayout
+        scatter = ScatterLayout(size_hint=(0.5, 0.5), pos_hint={'center_x': 0.5, 'center_y': 0.5})
+
+        # Add a Label and two TouchAwareButtons to the ScatterLayout
+        scatter.add_widget(Button(text="This is a regular button"))
+        scatter.add_widget(Button(text="Touch Aware Button 1", cls='TouchAwareButton'))
+        scatter.add_widget(Button(text="Touch Aware Button 2", cls='TouchAwareButton'))
+
+        # Schedule the animation
+        Clock.schedule_once(lambda dt: self.animate_scatter(scatter), 1)
+
+        return scatter
+
+    def animate_scatter(self, scatter):
+        # Animate the position and scale of the ScatterLayout
+        anim = Animation(pos=(100, 100), scale=1.5, duration=2) + \
+               Animation(pos=(0, 0), scale=1, duration=2)  # Revert to original state
+
+        anim.repeat = True  # Make the animation repeat indefinitely
+        anim.start(scatter)
+
+if __name__ == "__main__":
+    AnimatedScatterApp().run()
+
+
+
+sys.exit(0)
+
+from kivy.app import App
+from kivy.uix.button import Button
+from kivy.core.window import Window
+from kivy.animation import Animation
+from kivy.lang import Builder
+
+Window.size = (500, 500)
+
+KV_STRING = '''
+<HoverTextButton>:
+    size_hint: 0.5, 0.2
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    font_size: 20
+'''
+
+Builder.load_string(KV_STRING)
+
+class HoverTextButton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        Window.bind(on_motion=self.on_mouse_pos)
+
+    def on_mouse_pos(self, *args):
+        pos = args[2]
+        if self.collide_point(*pos):
+            self.animate_size((0.6, 0.3))
+        else:
+            self.animate_size((0.5, 0.2))
+
+    def animate_size(self, new_size_hint):
+        anim = Animation(size_hint=new_size_hint, duration=0.2)
+        anim.start(self)
+
+class HoverApp(App):
+    def build(self):
+        return HoverTextButton(text='Hover Me!')
+
+if __name__ == "__main__":
+    HoverApp().run()
+
+
+sys.exit(0)
 
 from kivy.app import App
 from kivy.uix.button import Button
