@@ -3,6 +3,7 @@ from kivy.graphics import Line
 from kivy.vector import Vector
 from .path import Path
 
+
 class ArrowPath(Path):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -13,15 +14,13 @@ class ArrowPath(Path):
         barb1_points, barb2_points = self._calculate_arrowhead_points()
 
         with self.canvas:
-            self._barb1 = Line(points=barb1_points, 
-                               width=self.line_width)
-            self._barb2 = Line(points=barb2_points, 
-                               width=self.line_width)
+            self._barb1 = Line(points=barb1_points, width=self.line_width)
+            self._barb2 = Line(points=barb2_points, width=self.line_width)
 
     def on_touch_move(self, touch):
         super().on_touch_move(touch)
 
-        if touch.button == 'left':
+        if touch.button == "left":
             barb1_points, barb2_points = self._calculate_arrowhead_points()
 
             self._barb1.points = barb1_points
@@ -46,13 +45,13 @@ class ArrowPath(Path):
         y1 = ye - self.arrowhead_length * math.sin(angle + self.arrowhead_angle)
         x2 = xe - self.arrowhead_length * math.cos(angle - self.arrowhead_angle)
         y2 = ye - self.arrowhead_length * math.sin(angle - self.arrowhead_angle)
-        
+
         barb1_points = [x1, y1, xe, ye]
         barb2_points = [x2, y2, xe, ye]
 
         return barb1_points, barb2_points
 
-    def on_pos(self, *args):
+    def build_shape_preview(self, *args):
         if self.shadow:
             self.shadow.on_pos(*args)
 
@@ -89,4 +88,3 @@ class ArrowPath(Path):
         self.end_point = Vector(sh_points[-2], sh_points[-1])
 
         self._barb1.points, self._barb2.points = self._calculate_arrowhead_points()
-    

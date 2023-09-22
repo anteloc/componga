@@ -1,28 +1,26 @@
 from kivy.uix.effectwidget import EffectWidget
 
-           
-from kivy.uix.effectwidget import (EffectBase,
-                    MonochromeEffect,
-                    InvertEffect,
-                    ChannelMixEffect,
-                    ScanlinesEffect,
-                    FXAAEffect,
-                    PixelateEffect,
-                    HorizontalBlurEffect,
-                    VerticalBlurEffect) 
+from kivy.uix.effectwidget import (
+    EffectBase,
+    MonochromeEffect,
+    InvertEffect,
+    ChannelMixEffect,
+    ScanlinesEffect,
+    FXAAEffect,
+    PixelateEffect,
+    HorizontalBlurEffect,
+    VerticalBlurEffect,
+)
 
 from kivy.uix.effectwidget import shader_header, shader_uniforms, shader_footer_effect
 
-
-
-
 # Taking examples/widgets/effectwidget.py as a starting point, develop a "chroma" effect
 # That applies an effect only to a certain color range
-# maybe effect_postprocessing is a good place to start, because the effect is applied to colors... 
+# maybe effect_postprocessing is a good place to start, because the effect is applied to colors...
 # maybe modify that effect to check if-statement the original colors are to be excluded
 # or else apply the effect to the color
 
-# effect_chroma = ''' 
+# effect_chroma = '''
 # vec4 effect(vec4 color, sampler2D texture, vec2 tex_coords, vec2 coords)
 # {
 #     vec4 result;
@@ -30,13 +28,13 @@ from kivy.uix.effectwidget import shader_header, shader_uniforms, shader_footer_
 #         result = vec4(0.0, 0.0, 1.0, 1.0);
 #     } else {
 #         result = color;
-#     } 
+#     }
 
 #     return result;
 # }
 # '''
 
-# effect_chroma = ''' 
+# effect_chroma = '''
 # vec4 effect(vec4 color, sampler2D texture, vec2 tex_coords, vec2 coords)
 # {
 #     if (color.r == 0.0 && color.g == 1.0 && color.b == 0.0) {
@@ -102,7 +100,7 @@ from kivy.uix.effectwidget import shader_header, shader_uniforms, shader_footer_
 # '''
 
 # FIXME Maybe consider include/exclude alpha channel? Currently, fading combined with this does not work as expected
-shader_footer_chroma_effect = '''
+shader_footer_chroma_effect = """
 void main (void) {{
     vec4 normal_color = frag_color * texture2D(texture0, tex_coord0);
 
@@ -120,10 +118,11 @@ void main (void) {{
         gl_FragColor = normal_color;
     }}
 }}
-'''
+"""
+
 
 # XXX How to avoid the mixin requiring an initialization?
-class ChromaShapeEffectMixin():
+class ChromaShapeEffectMixin:
     def __init__(self, chroma_color, chroma_tolerance, **kwargs):
         self._shape = None
 
@@ -132,17 +131,19 @@ class ChromaShapeEffectMixin():
         self._chroma_tolerance = tuple(map(float, chroma_tolerance))
 
     def set_fbo_shader(self, *args):
+        shader_footer_chroma = shader_footer_chroma_effect.format(
+            *self._chroma_color, *self._chroma_tolerance
+        )
 
-        shader_footer_chroma = shader_footer_chroma_effect.format(*self._chroma_color, 
-                                                                  *self._chroma_tolerance)
-        
         print(shader_footer_chroma)
 
         if self.fbo is None:
             return
-        
-        self.fbo.set_fs(shader_header + shader_uniforms + self.glsl +
-                        shader_footer_chroma)
+
+        self.fbo.set_fs(
+            shader_header + shader_uniforms + self.glsl + shader_footer_chroma
+        )
+
     # XXX These two methods are required in order to delegate the "fading" to the actual shape, not to the mixin
     # Maybe find another way in order to avoid these two methods to be delegated to the shape?
     def fade_shape(self):
@@ -153,29 +154,36 @@ class ChromaShapeEffectMixin():
         if self._shape:
             self._shape.cancel_fade()
 
+
 # XXX Is there a better way to add the mixin to the class?
 class ChromaScanlinesEffect(ChromaShapeEffectMixin, ScanlinesEffect):
-    def __init__(self, *args, 
-                #  shape=None, 
-                 chroma_color=(1, 1, 1, 1), 
-                 chroma_tolerance=(0.1, 0.1, 0.1, 0.1),
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        #  shape=None,
+        chroma_color=(1, 1, 1, 1),
+        chroma_tolerance=(0.1, 0.1, 0.1, 0.1),
+        **kwargs
+    ):
         ChromaShapeEffectMixin.__init__(self, chroma_color, chroma_tolerance)
         ScanlinesEffect.__init__(self, *args, **kwargs)
 
         # self.add_widget(self._shape)
-    
+
     def add_widget(self, widget):
         self._shape = widget
         super(ScanlinesEffect, self).add_widget(widget)
 
         # super(ScanlinesEffect, self).add_widget(self._shape)
 
+
 class ChromaHorizontalBlurEffect(ChromaShapeEffectMixin, HorizontalBlurEffect):
     pass
 
+
 class ChromaVerticalBlurEffect(ChromaShapeEffectMixin, VerticalBlurEffect):
     pass
+
 
 class ShapeEffect(EffectWidget):
     def add_widget(self, shape, *args, **kwargs):
@@ -188,6 +196,7 @@ class ShapeEffect(EffectWidget):
 
         return super().add_widget(shape, *args, **kwargs)
 
+
 class DraggableEffectWidget(EffectWidget):
     def __init__(self, shape, **kwargs):
         super(DraggableEffectWidget, self).__init__(**kwargs)
@@ -199,7 +208,6 @@ class DraggableEffectWidget(EffectWidget):
 
         self.shape = shape
         self.add_widget(self.shape)
-
 
     def on_touch_down(self, touch):
         self.shape.on_touch_down(touch)
@@ -228,10 +236,11 @@ class DraggableEffectWidget(EffectWidget):
         #     return True
         # return super(DraggableEffectWidget, self).on_touch_up(touch)
 
+
 # FIXME There are quite some issues here:
 # 1. The returned widget is not a shape, but an effect
-# 2. As it is right now, combining effects does not work as expected, 
-# maybe the combination of two effects causes the 1st one to alter the chroma color 
+# 2. As it is right now, combining effects does not work as expected,
+# maybe the combination of two effects causes the 1st one to alter the chroma color
 # and the 2nd one not to work on the altered color, because its not the same as the specified chroma?
 def wrap_with_chroma(shape, chroma_color):
     shape_effect = EffectWidget()
@@ -242,7 +251,10 @@ def wrap_with_chroma(shape, chroma_color):
     return shape_effect
 
 
-if __name__ == '__main__':
+# Taken from kivy examples, plays a video and applies an effect to it in real time.
+# Performance is good, but not enough for the effect to be applied to 100% of the frames: some frames and
+# fragments of the video are not modified by the effect.
+if __name__ == "__main__":
     from kivy.app import App
     import sys
 
@@ -253,29 +265,39 @@ if __name__ == '__main__':
     class VideoApp(App):
         def build(self):
             from kivy.uix.effectwidget import EffectWidget
-                
-            from kivy.uix.effectwidget import (EffectBase,
-                    MonochromeEffect,
-                    InvertEffect,
-                    ChannelMixEffect,
-                    ScanlinesEffect,
-                    FXAAEffect,
-                    PixelateEffect,
-                    HorizontalBlurEffect,
-                    VerticalBlurEffect) 
 
-            from kivy.uix.effectwidget import shader_header, shader_uniforms, shader_footer_effect
+            from kivy.uix.effectwidget import (
+                EffectBase,
+                MonochromeEffect,
+                InvertEffect,
+                ChannelMixEffect,
+                ScanlinesEffect,
+                FXAAEffect,
+                PixelateEffect,
+                HorizontalBlurEffect,
+                VerticalBlurEffect,
+            )
+
+            from kivy.uix.effectwidget import (
+                shader_header,
+                shader_uniforms,
+                shader_footer_effect,
+            )
             from kivy.uix.video import Video
 
-            self.v = Video(source=sys.argv[1], state='play')
+            self.v = Video(source=sys.argv[1], state="play")
             self.v.bind(state=self.replay)
             self.v.bind(on_touch_down=self.on_touch_down)
 
             shape_effect = EffectWidget()
             shape_effect.effects = [ScanlinesEffect()]
             chroma_color = (1, 1, 1, 1)
-            chroma_tolerance = (.3, .3, .3, .3)
-            shape_effect.effects = [ChromaScanlinesEffect(chroma_color=chroma_color, chroma_tolerance=chroma_tolerance)]
+            chroma_tolerance = (0.3, 0.3, 0.3, 0.3)
+            shape_effect.effects = [
+                ChromaScanlinesEffect(
+                    chroma_color=chroma_color, chroma_tolerance=chroma_tolerance
+                )
+            ]
             # shape_effect.effects = [ChromaHorizontalBlurEffect(shape=shape, chroma_color=chroma_color, size=10.0)]
             shape_effect.add_widget(self.v)
 
@@ -283,13 +305,13 @@ if __name__ == '__main__':
             return shape_effect
 
         def replay(self, *args):
-            if self.v.state == 'stop':
-                self.v.state = 'play'
+            if self.v.state == "stop":
+                self.v.state = "play"
 
         def on_touch_down(self, instance, touch, *args):
-            if touch.button == 'left' and self.v:
+            if touch.button == "left" and self.v:
                 # print(f"on_touch_down: {args}")
-                self.v.state = 'play' if self.v.state == 'pause' else 'pause'
+                self.v.state = "play" if self.v.state == "pause" else "pause"
                 return True
                 return super(VideoApp, self).on_touch_down(touch)
 

@@ -1,30 +1,35 @@
 import math
+
 from kivy.graphics import Line
 from kivy.vector import Vector
+
 from .baseshape import BaseShape
+
 
 class Path(BaseShape):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         with self.canvas:
-            self.path = Line(points=self.start_point, 
-                             joint='round', 
-                             cap='round',
-                             width=self.line_width)
+            self.path = Line(
+                points=self.start_point,
+                joint="round",
+                cap="round",
+                width=self.line_width,
+            )
 
     def on_touch_move(self, touch):
         super().on_touch_move(touch)
 
-        if touch.button == 'left':
+        if touch.button == "left":
             self.path.points += [*touch.pos]
             return True
         return False
 
-    def on_pos(self, *args):
+    def build_shape_preview(self, *args):
         if self.shadow:
             self.shadow.on_pos(*args)
-            
+
         x0 = int(self.parent.x)
         y0 = int(self.parent.y)
         y_max = int(self.parent.height)
@@ -43,4 +48,3 @@ class Path(BaseShape):
 
         self.start_point = Vector(cos_points[0], cos_points[1])
         self.end_point = Vector(cos_points[-2], cos_points[-1])
-   

@@ -1,23 +1,24 @@
-from kivy.graphics import Color, Line
-from kivy.graphics.boxshadow import BoxShadow
-from kivy.properties import BooleanProperty, ObjectProperty
-from kivy.vector import Vector
 from kivy.animation import Animation
+from kivy.graphics import Color
+from kivy.properties import BooleanProperty
 from kivy.uix.widget import Widget
-from kivy.uix.floatlayout import FloatLayout
+from kivy.vector import Vector
+
 
 class BaseShape(Widget):
     shape_faded = BooleanProperty(False)
 
-    def __init__(self, start_point, 
-                 initial_color, 
-                 line_width, 
-                 fade_duration=5.0, 
-                 pos_offset=(0, 0),
-                 is_shadowed=False,
-                 is_frozen=False, 
-                 **kwargs):
-        
+    def __init__(
+        self,
+        start_point,
+        initial_color,
+        line_width,
+        fade_duration=5.0,
+        pos_offset=(0, 0),
+        is_shadowed=False,
+        is_frozen=False,
+        **kwargs
+    ):
         super().__init__(**kwargs)
 
         self._kwargs = kwargs
@@ -49,26 +50,29 @@ class BaseShape(Widget):
             # self.shadow = wrapped
             # self.add_widget(wrapped)
 
-        # Doing this with canvas.before instead of with canvas 
+        # Doing this with canvas.before instead of with canvas
         # causes EffectWidget to not work
         with self.canvas:
             self.shape_color = Color(*self.initial_color)
 
     def build_shadow(self):
-        shadow_color=(0, 0, 0, .3)
-        pos_offset=(-5, -5)
+        shadow_color = (0, 0, 0, 0.3)
+        pos_offset = (-5, -5)
 
         shape_subclass = type(self)
-       
-        shadow = shape_subclass(self.start_point,
-                            shadow_color,
-                            self.line_width, 
-                            fade_duration=self.fade_duration,
-                            pos_offset=pos_offset,
-                            is_shadowed=False,
-                            is_frozen=self.is_frozen,
-                            **self._kwargs) # XXX Is this correct?
 
+        shadow = shape_subclass(
+            self.start_point,
+            shadow_color,
+            self.line_width,
+            fade_duration=self.fade_duration,
+            pos_offset=pos_offset,
+            is_shadowed=False,
+            is_frozen=self.is_frozen,
+            **self._kwargs
+        )  # XXX Is this correct?
+
+        # TODO Consider applying effects to the shape and shadow
         # self.shadow = shadow
         # self.add_widget(shadow, 1)
 
@@ -84,36 +88,34 @@ class BaseShape(Widget):
 
     def can_draw(self):
         return True
-    
-    # FIXME This method is for positioning a widget, but it's used as 
-    # a way to create a shape preview.
-    # Delegate calls to this method to another one, overriden by subclasses, with
-    # a more appropriate name.
-    #
-    # def on_pos(self, *args):
-    #     pass
+
+    # XXX This method is for detecting changes of position for a widget, but it's used as
+    #   a way to detect when to create a shape preview.
+    #   Delegate calls to this method to build_shape_preview(), overriden by subclasses
+    def on_pos(self, *args):
+        self.build_shape_preview(*args)
+
+    def build_shape_preview(self, *args):
+        pass
 
     def on_touch_move(self, touch):
-        """ Called when the user drags the mouse. """
-
         if self.shadow:
             self.shadow.on_touch_move(touch)
 
-        if touch.button == 'left':
+        if touch.button == "left":
             self.end_point = Vector(*touch.pos) + self.pos_offset
             return True
         return super().on_touch_move(touch)
 
     def on_touch_up(self, touch):
-        """ Called when the user releases a mouse button. """
         if self.shadow:
             self.shadow.on_touch_up(touch)
 
-        if touch.button == 'left' and not self.is_frozen:
+        if touch.button == "left" and not self.is_frozen:
             self.fade_shape()
             return True
         return super().on_touch_up(touch)
-    
+
     def freeze(self, is_frozen):
         self.is_frozen = is_frozen
 
@@ -123,7 +125,6 @@ class BaseShape(Widget):
             self.fade_shape()
 
     def fade_shape(self):
-
         if self.shadow:
             self.shadow.fade_shape()
 
@@ -133,7 +134,6 @@ class BaseShape(Widget):
             self._anim.start(self.shape_color)
 
     def cancel_fade(self):
-
         if self.shadow:
             self.shadow.cancel_fade()
 

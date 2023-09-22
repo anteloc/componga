@@ -13,6 +13,7 @@ def to_keypaths(adict, stack=[], keypaths=[]):
             keypaths.append((stack.copy(), value))
         stack.pop()
 
+
 # Returns the dpi's for each monitor, taking into account that each monitor can have a different dpi
 def print_dpi():
     import ctypes
@@ -32,14 +33,12 @@ def print_dpi():
     dpiY = ctypes.c_uint()
     for i, monitor in enumerate(monitors):
         shcore.GetDpiForMonitor(
-            monitor[0].handle,
-            MDT_EFFECTIVE_DPI,
-            ctypes.byref(dpiX),
-            ctypes.byref(dpiY)
+            monitor[0].handle, MDT_EFFECTIVE_DPI, ctypes.byref(dpiX), ctypes.byref(dpiY)
         )
         print(
             f"Monitor {i} (hmonitor: {monitor[0]}) = dpiX: {dpiX.value}, dpiY: {dpiY.value}"
         )
+
 
 # Makes a window transparent (layered window)
 # This is not what we are looking for, because it makes the whole window transparent and
@@ -51,7 +50,7 @@ def make_window_transparent():
     import win32con
     import win32api
     from kivy.core.window import Window
-    
+
     Window.set_title("Componga")
     handle = win32gui.FindWindow(None, "Componga")
     print(f"_setup_window handle: {handle}")
@@ -60,7 +59,7 @@ def make_window_transparent():
     # style = style | win32con.WS_EX_TRANSPARENT
     style = style | win32con.WS_EX_LAYERED
     # # Make it a layered window
-    win32gui.SetWindowLong(handle, win32con.GWL_EXSTYLE,  style)
+    win32gui.SetWindowLong(handle, win32con.GWL_EXSTYLE, style)
 
     flags = win32con.LWA_COLORKEY
     # flags = win32con.LWA_ALPHA | win32con.LWA_COLORKEY
@@ -68,4 +67,4 @@ def make_window_transparent():
 
     # # make it transparent (alpha between 0 and 255)
     alpha = 125
-    win32gui.SetLayeredWindowAttributes(handle, colorkey, alpha , flags)
+    win32gui.SetLayeredWindowAttributes(handle, colorkey, alpha, flags)
