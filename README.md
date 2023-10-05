@@ -3,38 +3,46 @@
 # componga
 Screen drawing app for presentations
 
-## Installation
+## Installation - Linux
 
-Linux installation:
-
-Tested with: python v3.10
-
-```
-pip install kivy
-pip install pyautogui
-pip install mss
-```
-
-See: requirements.txt for the exact versions used for developing the app.
-
-Now, clone the repo for this project:
+### 1. Clone the repo for this project:
 
 ```
 git clone https://github.com/anteloc/componga.git
 ```
 
-And checkout the branch:
+### 2. Checkout the ```main``` branch:
 
 ```
-$ git checkout kivy-port
+$ git checkout main
 ```
+
+### 3. Install Python if required
+
+Tested with Python v3.10 *only*, feedback on other Python versions is welcome!
+
+### 4. Install dependencies
+**RECOMMENDED:** create a virtual environment for this project, e.g.:
+
+```
+pip install virtualenv
+python -m venv componga-venv
+source componga-venv/bin/activate
+```
+
+Install dependencies:
+```
+pip install -r requirements.txt
+```
+
+Have a look at requirements.txt for the exact versions used for developing the app.
 
 ## Running 
 Start the app by running:
 
 ```
-cd src/componga-kivy
-python kivy___main__.py
+cd componga/src
+python main.py
 ```
 
 ## Control:
@@ -51,11 +59,11 @@ python kivy___main__.py
     - **a**: select arrow path
     - **s**: select arrow straight
     - **l**: select line straight
-    - **e**: select ellipse
+    - **o**: select ellipse
     - **r**: select rectangle
     - **p**: select path
 - _Configuration:_
     - Last shape selected, color and line width are saved automatically
-    - To change the configuration, edit the `componga.ini` file
-
-
+    - To change the configuration, edit the `componga.ini` file:
+      - Linux: ```$HOME/.componga/componga.ini```
+      - Windows: TBD
