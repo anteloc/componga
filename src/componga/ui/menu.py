@@ -52,10 +52,11 @@ class PopupMenu(Popup):
         self.max_line_width = max_line_width
 
     def on_show_help(self, *args):
-        if self.show_help:
-            help_popup = PopupHelp()
-            help_popup.open()
-            self.show_help = False
+        App.get_running_app().open_settings()
+        # if self.show_help:
+        #     help_popup = PopupHelp()
+        #     help_popup.open()
+        #     self.show_help = False
 
 
 class PopupHelp(Popup):

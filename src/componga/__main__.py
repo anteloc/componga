@@ -2,8 +2,20 @@ import os
 import platform
 import sys
 
+from kivy.uix.settings import (
+    SettingsWithSidebar,
+    SettingsWithNoMenu,
+    SettingsWithSpinner,
+    SettingsWithTabbedPanel,
+)
+
 from componga.ui import DrawSurface
-from componga.util import find_current_monitor_info, DEFAULT_CONFIG_SECTIONS
+from componga.util import (
+    find_current_monitor_info,
+    DEFAULT_CONFIG_SECTIONS,
+    CONFIG_PANEL_SHAPES_SECTIONS,
+    CONFIG_PANEL_KEYBOARD_SECTIONS,
+)
 
 OS = platform.system().lower()
 
@@ -30,9 +42,17 @@ from kivy.resources import resource_add_path, resource_find
 
 
 class CompongaApp(App):
+    use_kivy_settings = False
+
     def build(self):
         Config.set("kivy", "log_level", "debug")
         self.title = "Componga"
+
+        self.settings_cls = SettingsWithTabbedPanel
+        # self.settings_cls = SettingsWithSpinner
+        # self.settings_cls = SettingsWithNoMenu
+        # self.settings_cls = SettingsWithSidebar
+
         self._draw_surface = DrawSurface(pos_hint={"center_x": 0.5, "center_y": 0.5})
         self.monitor = None
         self.monitor_unsc = None
@@ -47,8 +67,8 @@ class CompongaApp(App):
         self.config.add_callback(self.on_config_change)
         self.monitor, self.monitor_unsc = find_current_monitor_info()
 
-        self._fullscreen()
         self._setup_keyboard()
+        self._fullscreen()
 
         self._draw_surface.post_init()
 
@@ -56,26 +76,49 @@ class CompongaApp(App):
         self.config.write()
 
     def build_config(self, config):
-        # FIXME: this is initial config should be created in the user's config dir, not in the app's dir
         for section in DEFAULT_CONFIG_SECTIONS:
             config.setdefaults(section["name"], section["options"])
 
-    def get_application_config(self):
-        self._bootstrap_config()
+    def build_settings(self, settings):
+        import json
 
-        return super(CompongaApp, self).get_application_config(
-            "~/.componga/%(appname)s.ini"
+        settings.add_json_panel(
+            "Shapes", self.config, data=json.dumps(CONFIG_PANEL_SHAPES_SECTIONS)
         )
+
+        settings.add_json_panel(
+            "Keyboard", self.config, data=json.dumps(CONFIG_PANEL_KEYBOARD_SECTIONS)
+        )
+
+        settings.size_hint = (0.5, 0.5)
+        settings.pos_hint = {"center_x": 0.5, "center_y": 0.5}
+
+    def close_settings(self, settings=None):
+        """
+        The settings panel has been closed.
+        """
+        Logger.info("main.py: App.close_settings: {0}".format(settings))
+
+        super(CompongaApp, self).close_settings(settings)
+
+    def get_application_config(self):
+        config_file = self._bootstrap_config_file()
+
+        return config_file
 
     def get_resource(self, filename):
         return resource_find(filename)
 
-    def _bootstrap_config(self):
+    def _bootstrap_config_file(self):
         home_directory = os.path.expanduser("~")
         config_dir = os.path.join(home_directory, ".componga")
 
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
+
+        config_file = os.path.join(config_dir, "componga.ini")
+
+        return config_file
 
     def _fullscreen(self):
         if OS == "linux":

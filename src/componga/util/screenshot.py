@@ -50,7 +50,12 @@ class _BackgroundScreenshotHandlerTrait(object):
                 return self._capture_background(new_mon, attempts)
 
             sct_img = sct.grab(mon)
-            mss.tools.to_png(sct_img.rgb, sct_img.size, level=1, output=tmp_file.name)
+            from PIL import Image
+            img = Image.frombytes(mode="RGB", size=(sct_img.width, sct_img.height), data=sct_img.rgb)
+
+            img.save(tmp_file.name, dpi=(300, 300))
+
+            # mss.tools.to_png(sct_img.rgb, sct_img.size, level=1, output=tmp_file.name)
 
         return tmp_file
 

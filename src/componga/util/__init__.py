@@ -10,6 +10,8 @@ from .constants import (
     MIN_SHAPE_LINE_WIDTH,
     MAX_SHAPE_LINE_WIDTH,
     SCREEN_TITLE,
+    CONFIG_PANEL_SHAPES_SECTIONS,
+    CONFIG_PANEL_KEYBOARD_SECTIONS,
 )
 
 from .functions import find_current_monitor_info, find_shape_type
