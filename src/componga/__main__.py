@@ -2,9 +2,6 @@ import os
 import platform
 import sys
 
-from componga.ui import DrawSurface
-from componga.util import find_current_monitor_info, DEFAULT_CONFIG_SECTIONS
-
 OS = platform.system().lower()
 
 # Workaround for Kivy bug on Windows when using PyInstaller and not using the console
@@ -28,6 +25,8 @@ from kivy.app import App
 from kivy.logger import Logger
 from kivy.resources import resource_add_path, resource_find
 
+from componga.ui import DrawSurface
+from componga.util import find_current_monitor_info, DEFAULT_CONFIG_SECTIONS
 
 class CompongaApp(App):
     def build(self):
