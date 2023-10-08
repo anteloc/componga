@@ -24,11 +24,17 @@ Config.set("graphics", "multisamples", "10")
 from kivy.app import App
 from kivy.logger import Logger
 from kivy.resources import resource_add_path, resource_find
+from kivy.clock import Clock
 
 from componga.ui import DrawSurface
 from componga.util import find_current_monitor_info, DEFAULT_CONFIG_SECTIONS
 
+
 class CompongaApp(App):
+    def __init__(self, launcher=None):
+        super(CompongaApp, self).__init__()
+        self._launcher = launcher
+
     def build(self):
         Config.set("kivy", "log_level", "debug")
         self.title = "Componga"
@@ -51,6 +57,9 @@ class CompongaApp(App):
 
         self._draw_surface.post_init()
 
+        if self._launcher:
+            self._launcher.register_componga_app(self)
+
     def on_config_change(self, *args, **kwargs):
         self.config.write()
 
@@ -68,6 +77,22 @@ class CompongaApp(App):
 
     def get_resource(self, filename):
         return resource_find(filename)
+
+    def run_launcher_cmd(self, cmd):
+        clock_callback = None
+
+        if cmd == "show":
+            clock_callback = lambda dt: self.root_window.show()
+        elif cmd == "hide":
+            clock_callback = lambda dt: self.root_window.hide()
+        elif cmd == "stop":
+            clock_callback = lambda dt: self.stop()
+        else:
+            raise Exception(f"Unknown command {cmd}")
+
+        # Kivy doesn't allow calling methods from an external thread.
+        # Schedule the call to the method in kivy's main thread instead.
+        Clock.schedule_once(clock_callback, 0)
 
     def _bootstrap_config(self):
         home_directory = os.path.expanduser("~")
@@ -139,8 +164,8 @@ class CompongaApp(App):
         )
 
 
-def main():
-    app = CompongaApp()
+def main(launcher=None):
+    app = CompongaApp(launcher)
     app.run()
 
 

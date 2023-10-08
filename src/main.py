@@ -1,4 +1,8 @@
-from componga.__main__ import main
+from componga.systray import WxApp
+
 
 if __name__ == "__main__":
-    main()
+
+    app = WxApp(False)
+    app.MainLoop()
+
