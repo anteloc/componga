@@ -1,6 +1,6 @@
 import mouse
-from kivy.logger import Logger
-from kivy.metrics import Metrics
+# from kivy.logger import Logger
+
 
 from .constants import SHAPE_TYPES, SHAPE_TYPES_LOWER, SHAPE_TYPES_UPPER
 from .screeninfo import get_monitors
@@ -9,31 +9,69 @@ from .screeninfo import get_monitors
 # XXX This is a hack to ensure that the metrics are set for the monitors, just in
 #   case componga's screeninfo doesn't report the correct values
 def _ensure_metrics(monitors):
-    for monitor in monitors:
-        if monitor.dpi is None or monitor.density is None:
-            Logger.warn(
-                f"No metrics detected by componga's screeninfo, using kivy's metrics: dpi: {Metrics.dpi}, density: {Metrics.density}"
-            )
-            monitor.dpi = Metrics.dpi
-            monitor.density = Metrics.density
+    for mon in monitors:
+        if mon.dpi is None or mon.density is None:
+            # Logger.warn(
+            #     f"No metrics detected by componga's screeninfo, using kivy's metrics: dpi: {Metrics.dpi}, density: {Metrics.density}"
+            # )
+
+            from kivy.metrics import Metrics
+
+            mon.dpi = Metrics.dpi
+            mon.density = Metrics.density
+
+
+def _add_friendly_names(monitors):
+    for i, mon in enumerate(monitors):
+        mon.friendly_name = f"Monitor {i + 1} - {mon.width}x{mon.height}"
+
+
+def get_monitors_info():
+    monitors = get_monitors()
+    _ensure_metrics(monitors)
+    _add_friendly_names(monitors)
+
+    mon_infos = [
+        {
+            "left": mon.x,
+            "top": mon.y,
+            "width": mon.width,
+            "height": mon.height,
+            "friendly_name": mon.friendly_name,
+            "density": mon.density,
+        }
+        for mon in monitors
+    ]
+
+    return mon_infos
+
+
+def monitors_unsc_info(mon):
+    density = mon["density"]
+
+    mon_unsc = {
+        key: int(val / density) if not isinstance(val, str) else val
+        for key, val in mon.items()
+    }
+
+    return mon, mon_unsc
 
 
 def find_current_monitor_info():
-    monitors = get_monitors()
-    _ensure_metrics(monitors)
+    monitors = get_monitors_info()
 
-    Logger.debug(f"monitors screeninfo: {monitors}")
+    # Logger.debug(f"monitors screeninfo: {monitors}")
 
     mouse_x, mouse_y = mouse.get_position()
-    Logger.debug(f"mouse at {mouse_x}, {mouse_y}")
+    # Logger.debug(f"mouse at {mouse_x}, {mouse_y}")
 
     current_monitor = None
 
     for mon in monitors:
-        scr_x0 = mon.x
-        scr_x1 = mon.x + mon.width
-        scr_y0 = mon.y
-        scr_y1 = mon.y + mon.height
+        scr_x0 = mon["left"]
+        scr_x1 = mon["left"] + mon["width"]
+        scr_y0 = mon["top"]
+        scr_y1 = mon["top"] + mon["height"]
 
         if (
             mouse_x >= scr_x0
@@ -44,18 +82,19 @@ def find_current_monitor_info():
             current_monitor = mon
 
         if current_monitor is not None:
-            density = current_monitor.density
-            mss_monitor = {
-                "left": current_monitor.x,
-                "top": current_monitor.y,
-                "width": current_monitor.width,
-                "height": current_monitor.height,
-            }
-            mss_monitor_unsc = {
-                key: int(val / density) for key, val in mss_monitor.items()
-            }
-
-            return mss_monitor, mss_monitor_unsc
+            return current_monitor, monitors_unsc_info(current_monitor)
+            # density = current_monitor.density
+            # mss_monitor = {
+            #     "left": current_monitor.x,
+            #     "top": current_monitor.y,
+            #     "width": current_monitor.width,
+            #     "height": current_monitor.height,
+            # }
+            # mss_monitor_unsc = {
+            #     key: int(val / density) for key, val in mss_monitor.items()
+            # }
+            #
+            # return mss_monitor, mss_monitor_unsc
 
     return None, None
 

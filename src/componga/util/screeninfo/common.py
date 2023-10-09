@@ -32,6 +32,7 @@ class Monitor:
     width_mm: T.Optional[int] = None
     height_mm: T.Optional[int] = None
     name: T.Optional[str] = None
+    friendly_name: T.Optional[str] = None
     is_primary: T.Optional[bool] = None
 
     def __repr__(self) -> str:

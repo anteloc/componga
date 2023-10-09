@@ -20,6 +20,8 @@ class DrawSurface(FloatLayout):
 
         self._menu = None
         self.background = None
+        self._monitor = None
+        self._monitor_unsc = None
         self._pressed_keycodes = set()
 
         self._prev_shapes = []
@@ -81,6 +83,17 @@ class DrawSurface(FloatLayout):
         self._shape_constructor = eval(self._shape_type)
         self._shape_color = eval(config.get(sect, "shape_color"))
 
+    def set_monitors(self, monitor, monitor_unsc):
+        self._monitor = monitor
+        self._monitor_unsc = monitor_unsc
+        self._bg_handler = BackgroundScreenshotHandler(self, self._monitor, self._app.root_window)
+
+    def fake_desktop_background(self):
+        if self.background:
+            self.background.close()
+
+        self._bg_handler.take_screenshot()
+
     def on_background(self, *args):
         self._set_background(self.background)
 
@@ -102,7 +115,7 @@ class DrawSurface(FloatLayout):
             if cmd == "freeze":
                 self._toggle_freeze()
             elif cmd == "update_background":
-                self._update_background()
+                self.fake_desktop_background()
             elif cmd == "exit":
                 self.exit_app()
             return True
@@ -201,6 +214,7 @@ class DrawSurface(FloatLayout):
         self._app.stop()
 
     def _set_background(self, new_background):
+        print(f"setting background: {new_background}")
         bg = new_background
         bg_size = Image.open(bg.name).size
 
@@ -212,11 +226,6 @@ class DrawSurface(FloatLayout):
 
         self.background = bg
 
-    def _update_background(self):
-        if self.background:
-            self.background.close()
-
-        self._bg_handler.take_screenshot()
 
     def _handle_mouse_wheel(self, wheel_direction):
         if "shift" in self._pressed_keycodes:

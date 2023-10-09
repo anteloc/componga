@@ -1,8 +1,10 @@
 import os
-import platform
+# import platform
 import sys
 
-OS = platform.system().lower()
+from componga.util import OS
+
+# OS = platform.system().lower()
 
 # Workaround for Kivy bug on Windows when using PyInstaller and not using the console
 # See: https://github.com/kivy/kivy/issues/8074
@@ -32,8 +34,8 @@ from componga.util import find_current_monitor_info, DEFAULT_CONFIG_SECTIONS
 
 class CompongaApp(App):
     def __init__(self, launcher=None):
-        super(CompongaApp, self).__init__()
         self._launcher = launcher
+        super(CompongaApp, self).__init__()
 
     def build(self):
         Config.set("kivy", "log_level", "debug")
@@ -46,16 +48,22 @@ class CompongaApp(App):
 
         return self._draw_surface
 
+    def set_monitors(self, monitor, monitor_unsc):
+        self.monitor = monitor
+        self.monitor_unsc = monitor_unsc
+        self._draw_surface.set_monitors(monitor, monitor_unsc)
+
     def on_start(self):
         self.root_window.title = self.title
         Logger.debug(f"self.root_window: {self.root_window}")
         self.config.add_callback(self.on_config_change)
-        self.monitor, self.monitor_unsc = find_current_monitor_info()
+        # self.monitor, self.monitor_unsc = find_current_monitor_info()
 
-        self._fullscreen()
-        self._setup_keyboard()
+        # self._fullscreen()
+        # self._setup_keyboard()
 
-        self._draw_surface.post_init()
+        # XXX keep initial background screenshot?
+        # self._draw_surface.post_init()
 
         if self._launcher:
             self._launcher.register_componga_app(self)
@@ -78,11 +86,15 @@ class CompongaApp(App):
     def get_resource(self, filename):
         return resource_find(filename)
 
-    def run_launcher_cmd(self, cmd):
+    def run_launcher_cmd(self, cmd, **kwargs):
+        print(f"run_launcher_cmd: {cmd}, {kwargs}")
         clock_callback = None
 
         if cmd == "show":
-            clock_callback = lambda dt: self.root_window.show()
+            self.set_monitors(kwargs["monitor"], kwargs["monitor_unsc"])
+
+            clock_callback = lambda dt: self.fullscreen()
+            # clock_callback = lambda dt: self.root_window.show()
         elif cmd == "hide":
             clock_callback = lambda dt: self.root_window.hide()
         elif cmd == "stop":
@@ -101,7 +113,8 @@ class CompongaApp(App):
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
 
-    def _fullscreen(self):
+    def fullscreen(self):
+        print("fullscreen")
         if OS == "linux":
             self.root_window.fullscreen = "auto"
         elif OS == "darwin":
@@ -116,7 +129,10 @@ class CompongaApp(App):
 
         self._position_window()
         self._resize_window()
-        self._win_info("on_start")
+        self._win_info("fullscreen")
+
+        self._draw_surface.fake_desktop_background()
+        # self.root_window.show()
 
     def _position_window(self):
         self.root_window.left, self.root_window.top = (
@@ -165,6 +181,7 @@ class CompongaApp(App):
 
 
 def main(launcher=None):
+    print(f"componga main: {launcher}")
     app = CompongaApp(launcher)
     app.run()
 

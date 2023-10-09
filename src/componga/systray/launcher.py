@@ -1,6 +1,8 @@
 import wx
 import wx.adv
-from threading import Thread
+from threading import Thread, Condition
+
+from componga.util import get_monitors_info, monitors_unsc_info, desktop_screenshot
 
 
 def async_componga_run(launcher):
@@ -11,21 +13,28 @@ def async_componga_run(launcher):
 
 class ImageFrame(wx.Frame):
     def __init__(self, callback, parent=None):
-        super(ImageFrame, self).__init__(parent, title="Images", size=(500, 200))
+        super(ImageFrame, self).__init__(parent, title="Images", size=(1500, 200))
 
         self._callback = callback
+        self._monitors = get_monitors_info()
+        monitors_screenshots = [
+            (mon, desktop_screenshot(mon)) for mon in self._monitors
+        ]
+
         panel = wx.Panel(self)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
-        labels = ['Image 1', 'Image 2', 'Image 3']
-        for idx, label in enumerate(labels):
+        for mon, scrshot in monitors_screenshots:
             vbox = wx.BoxSizer(wx.VERTICAL)
-            static_text = wx.StaticText(panel, label=label)
-            bitmap = wx.Bitmap(f'/home/captain/workspace-gpt/componga/src/componga/resources/arrow-path.png', wx.BITMAP_TYPE_ANY)
+            static_text = wx.StaticText(panel, label=mon["friendly_name"])
+            bitmap = wx.Bitmap(
+                scrshot.name,
+                wx.BITMAP_TYPE_ANY,
+            )
             image = wx.StaticBitmap(panel, wx.ID_ANY, bitmap)
 
             image.Bind(wx.EVT_LEFT_DOWN, self.on_image_click)
-            image.name = label
+            image.name = mon["friendly_name"]
 
             vbox.Add(static_text, flag=wx.ALIGN_CENTER)
             vbox.Add(image, flag=wx.TOP | wx.ALIGN_CENTER, border=10)
@@ -35,9 +44,11 @@ class ImageFrame(wx.Frame):
 
     def on_image_click(self, event):
         source = event.GetEventObject()
-        print(source.name)
+        selected_mon = [
+            mon for mon in self._monitors if mon["friendly_name"] == source.name
+        ][0]
         self.Close()
-        self._callback(source.name)
+        self._callback(selected_mon)
 
 
 class ConfigFrame(wx.Frame):
@@ -99,14 +110,19 @@ class ConfigFrame(wx.Frame):
 class TrayIcon(wx.adv.TaskBarIcon):
     def __init__(self):
         super(TrayIcon, self).__init__()
-        self.set_icon("/home/captain/workspace-gpt/componga/src/componga/resources/arrow-path.png")
+        self.set_icon(
+            "/home/captain/workspace-gpt/componga/src/componga/resources/arrow-path.png"
+        )
         self._componga_app = None
         self._menu = None
         self._build_menu()
         self.Bind(wx.adv.EVT_TASKBAR_RIGHT_DOWN, self.on_right_click)
 
+        self.componga_ready = Condition()
+
     def _build_menu(self):
         self._menu = wx.Menu()
+
         show_item = self._menu.Append(wx.ID_ANY, "Show", "Show Image Frame")
         hide_item = self._menu.Append(wx.ID_ANY, "Hide", "Hide Componga Window")
         config_item = self._menu.Append(wx.ID_ANY, "Config", "Configure Shortcuts")
@@ -123,25 +139,38 @@ class TrayIcon(wx.adv.TaskBarIcon):
         Thread(target=async_componga_run, args=(self,)).start()
 
     def register_componga_app(self, componga_app):
-        self._componga_app = componga_app
+        print("register_componga_app")
+        with self.componga_ready:
+            self._componga_app = componga_app
+            self.componga_ready.notify_all()
 
     def set_icon(self, path):
         icon = wx.Icon(path)
-        self.SetIcon(icon, "Tray App")
+        self.SetIcon(icon, "Componga")
 
     def on_right_click(self, event):
         self.PopupMenu(self._menu)
 
     def on_show(self, event):
+        if not self._componga_app:
+            # Launch componga in a separate thread, and wait for it to register
+            #   itself with the launcher because wxPython is not thread-safe and we don't want
+            #   mix up GUI calls from different threads, kivy and wxPython ones
+            self._launch_componga()
+            with self.componga_ready:
+                while not self._componga_app:
+                    self.componga_ready.wait()
+
         frame = ImageFrame(self._on_desktop_selected)
         frame.Show()
 
     def _on_desktop_selected(self, selection):
         print(f"on_desktop_selected: {selection}")
-        if self._componga_app:
-            self._componga_app.run_launcher_cmd("show")
-        else:
-            wx.CallAfter(self._launch_componga)
+        comp_mon, comp_mon_unsc = monitors_unsc_info(selection)
+
+        self._componga_app.run_launcher_cmd(
+            "show", monitor=comp_mon, monitor_unsc=comp_mon_unsc
+        )
 
     def on_hide(self, event):
         print("on_hide")
@@ -165,9 +194,14 @@ class WxApp(wx.App):
     def OnInit(self):
         frame = wx.Frame(None)
         self.tray_icon = TrayIcon()
+
         return True
 
 
-if __name__ == "__main__":
+def main():
     app = WxApp(False)
     app.MainLoop()
+
+
+if __name__ == "__main__":
+    main()

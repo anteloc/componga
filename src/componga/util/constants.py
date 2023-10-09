@@ -1,3 +1,7 @@
+import platform
+
+OS = platform.system().lower()
+
 SCREEN_TITLE = "componga"
 
 SHAPE_TYPES = (

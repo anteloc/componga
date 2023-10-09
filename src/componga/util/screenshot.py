@@ -1,14 +1,24 @@
 import os
-import platform
 import tempfile
 import time
 import mss
 import mss.tools
 from kivy.logger import Logger
 from kivy.clock import Clock
+from .constants import OS
 from .functions import find_current_monitor_info
 
-OS = platform.system().lower()
+
+def desktop_screenshot(mon):
+    Logger.debug(f"taking screenshot for mon: {mon}")
+
+    tmp_file = BackgroundScreenshot()
+
+    with mss.mss() as sct:
+        sct_img = sct.grab(mon)
+        mss.tools.to_png(sct_img.rgb, sct_img.size, level=1, output=tmp_file.name)
+
+    return tmp_file
 
 
 class BackgroundScreenshot(object):
@@ -27,32 +37,10 @@ class BackgroundScreenshot(object):
 class _BackgroundScreenshotHandlerTrait(object):
     def take_screenshot(self, mon, target, win):
         self._hide_window(win)
-        bg = self._capture_background(mon)
+        bg = desktop_screenshot(mon)
         self._show_window(win)
 
         target.background = bg
-
-    def _capture_background(self, mon, attempts=0):
-        Logger.debug(f"taking screenshot for mon: {mon}")
-
-        if attempts > 3:
-            return None
-
-        tmp_file = BackgroundScreenshot()
-
-        with mss.mss() as sct:
-            monitors = sct.monitors
-            mon_number = monitors.index(mon) if mon in monitors else None
-            # Maybe the previous monitor was disconnected
-            if mon_number is None:
-                new_mon, _ = find_current_monitor_info()
-                attempts += 1
-                return self._capture_background(new_mon, attempts)
-
-            sct_img = sct.grab(mon)
-            mss.tools.to_png(sct_img.rgb, sct_img.size, level=1, output=tmp_file.name)
-
-        return tmp_file
 
 
 class _OSXBackgroundScreenshotHandler(_BackgroundScreenshotHandlerTrait):
@@ -104,12 +92,10 @@ class _LinuxBackgroundScreenshotHandler(_BackgroundScreenshotHandlerTrait):
 
 
 class BackgroundScreenshotHandler(object):
-    def __init__(self, target):
-        from kivy.app import App
-
+    def __init__(self, target, mon, win):
         self._target = target
-        self._app = App.get_running_app()
-        self._mon = self._app.monitor
+        self._mon = mon
+        self.win = win
         self._delegate = None
 
     def _create_delegate(self):
@@ -129,9 +115,7 @@ class BackgroundScreenshotHandler(object):
             if self._delegate is None:
                 self._create_delegate()
 
-            self._delegate.take_screenshot(
-                self._mon, self._target, self._app.root_window
-            )
+            self._delegate.take_screenshot(self._mon, self._target, self.win)
         except Exception as e:
             Logger.exception(f"Error taking screenshot: {e}")
             raise e

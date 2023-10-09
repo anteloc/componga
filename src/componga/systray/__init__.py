@@ -1,1 +1,1 @@
-from .launcher import WxApp
+from .launcher import main
