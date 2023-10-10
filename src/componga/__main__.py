@@ -72,7 +72,6 @@ class CompongaApp(App):
         self.config.write()
 
     def build_config(self, config):
-        # FIXME: this is initial config should be created in the user's config dir, not in the app's dir
         for section in DEFAULT_CONFIG_SECTIONS:
             config.setdefaults(section["name"], section["options"])
 
@@ -88,23 +87,23 @@ class CompongaApp(App):
 
     def run_launcher_cmd(self, cmd, **kwargs):
         print(f"run_launcher_cmd: {cmd}, {kwargs}")
-        clock_callback = None
+        clock_callbacks = []
 
         if cmd == "show":
-            self.set_monitors(kwargs["monitor"], kwargs["monitor_unsc"])
-
-            clock_callback = lambda dt: self.fullscreen()
+            clock_callbacks.append(lambda dt: self.set_monitors(kwargs["monitor"], kwargs["monitor_unsc"]))
+            clock_callbacks.append(lambda dt: self.show_window())
             # clock_callback = lambda dt: self.root_window.show()
         elif cmd == "hide":
-            clock_callback = lambda dt: self.root_window.hide()
+            clock_callbacks.append(lambda dt: self.hide_window())
         elif cmd == "stop":
-            clock_callback = lambda dt: self.stop()
+            clock_callbacks.append(lambda dt: self.stop())
         else:
             raise Exception(f"Unknown command {cmd}")
 
         # Kivy doesn't allow calling methods from an external thread.
         # Schedule the call to the method in kivy's main thread instead.
-        Clock.schedule_once(clock_callback, 0)
+        for clock_callback in clock_callbacks:
+            Clock.schedule_once(clock_callback, 0)
 
     def _bootstrap_config(self):
         home_directory = os.path.expanduser("~")
@@ -113,38 +112,67 @@ class CompongaApp(App):
         if not os.path.exists(config_dir):
             os.makedirs(config_dir)
 
-    def fullscreen(self):
-        print("fullscreen")
-        if OS == "linux":
-            self.root_window.fullscreen = "auto"
-        elif OS == "darwin":
-            # TODO Full screen custom config for OSX
-            pass
-        elif OS == "windows":
-            pass
-        else:
-            raise Exception(
-                f"OS {OS} not supported - Unable to set window to fullscreen"
-            )
+    def show_window(self):
+        print("show_window")
+        # TODO Check if a working fullscreen is platform-dependent
+        # if OS == "linux":
+        #     # pass
+        #     # self.root_window.fullscreen = "auto"
+        #     # self.root_window.fullscreen = "fake"
+        #     # self.root_window.position = "custom"
+        # elif OS == "darwin":
+        #     # TODO Full screen custom config for OSX
+        #     pass
+        # elif OS == "windows":
+        #     pass
+        # else:
+        #     raise Exception(
+        #         f"OS {OS} not supported - Unable to set window to fullscreen"
+        #     )
+
+        # TODO Workaround fullscreen for Linux due to other ways being buggy, verify it works for Windows and several different monitors
+        # TODO Review if the usleep calls are still needed
+        self.root_window.borderless = True
+        Clock.usleep(200000)
+        self.root_window.maximize()
 
         self._position_window()
+        Clock.usleep(200000)
         self._resize_window()
-        self._win_info("fullscreen")
+        Clock.usleep(200000)
+        self._win_info("show_window")
 
         self._draw_surface.fake_desktop_background()
-        # self.root_window.show()
+        self._setup_keyboard()
+        self.root_window.raise_window()
+
+    def hide_window(self):
+
+        # TODO Check if the app is still present in the taskbar for Windows, Linux and OSX
+        self.root_window.borderless = False
+        Clock.usleep(200000)
+        self.root_window.minimize()
+        Clock.usleep(200000)
+        self.root_window.hide()
 
     def _position_window(self):
+
+        print(f"position_window: monitor: {self.monitor}")
+
         self.root_window.left, self.root_window.top = (
             self.monitor["left"],
             self.monitor["top"],
         )
 
+        self._win_info("_position_window")
+
     def _resize_window(self):
         self.root_window.system_size = (
-            self.monitor_unsc["width"],
-            self.monitor_unsc["height"],
+            self.monitor["width"],
+            self.monitor["height"],
         )
+
+        self._win_info("_resize_window")
 
     def _setup_keyboard(self):
         # Bind the keyboard to the on_key_down function

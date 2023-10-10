@@ -13,7 +13,7 @@ def async_componga_run(launcher):
 
 class ImageFrame(wx.Frame):
     def __init__(self, callback, parent=None):
-        super(ImageFrame, self).__init__(parent, title="Images", size=(1500, 200))
+        super(ImageFrame, self).__init__(parent, title="Select a monitor", size=(1500, 200))
 
         self._callback = callback
         self._monitors = get_monitors_info()
@@ -27,10 +27,7 @@ class ImageFrame(wx.Frame):
         for mon, scrshot in monitors_screenshots:
             vbox = wx.BoxSizer(wx.VERTICAL)
             static_text = wx.StaticText(panel, label=mon["friendly_name"])
-            bitmap = wx.Bitmap(
-                scrshot.name,
-                wx.BITMAP_TYPE_ANY,
-            )
+            bitmap = self.resize_image(scrshot.name, 300)
             image = wx.StaticBitmap(panel, wx.ID_ANY, bitmap)
 
             image.Bind(wx.EVT_LEFT_DOWN, self.on_image_click)
@@ -41,6 +38,36 @@ class ImageFrame(wx.Frame):
             hbox.Add(vbox, flag=wx.ALL, border=10)
 
         panel.SetSizer(hbox)
+        hbox.Fit(self)
+
+        # Make the window non-resizable
+        current_size = self.GetSize()
+        self.SetMinSize(current_size)
+        self.SetMaxSize(current_size)
+
+    def resize_image(self, image_path, width):
+        # Load the image
+        image = wx.Image(image_path, wx.BITMAP_TYPE_PNG)
+
+        # Get original width and height
+        original_width = image.GetWidth()
+        original_height = image.GetHeight()
+
+        # Calculate aspect ratio
+        aspect_ratio = original_height / original_width
+
+        # Calculate new height while maintaining aspect ratio
+
+        height = int(width * aspect_ratio)
+
+        # Resize the image
+        image = image.Scale(width, height)
+
+        # Convert to Bitmap for displaying on StaticBitmap
+        bitmap = wx.Bitmap(image)
+        #######
+
+        return bitmap
 
     def on_image_click(self, event):
         source = event.GetEventObject()
@@ -116,7 +143,7 @@ class TrayIcon(wx.adv.TaskBarIcon):
         self._componga_app = None
         self._menu = None
         self._build_menu()
-        self.Bind(wx.adv.EVT_TASKBAR_RIGHT_DOWN, self.on_right_click)
+        self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.on_left_click)
 
         self.componga_ready = Condition()
 
@@ -136,7 +163,32 @@ class TrayIcon(wx.adv.TaskBarIcon):
         return self._menu
 
     def _launch_componga(self):
-        Thread(target=async_componga_run, args=(self,)).start()
+        Thread(target=async_componga_run, args=(self,), daemon=True).start()
+
+        # Wait until componga is ready and registers itself with self
+        error = False
+        try:
+            with self.componga_ready:
+                while not self._componga_app:
+                    wait_result = self.componga_ready.wait(timeout=5.0)
+                    error = not wait_result
+        except Exception as e:
+            error = True
+            print(f"Error launching componga: {e}")
+
+        if error:
+            dlg = wx.MessageDialog(
+                None,
+                "Componga execution failed, application will exit",
+                "Error",
+                wx.OK | wx.ICON_ERROR,
+            )
+
+            dlg.ShowModal()
+            dlg.Destroy()
+
+            wx.CallAfter(self.Destroy)
+            wx.CallAfter(wx.GetApp().ExitMainLoop)
 
     def register_componga_app(self, componga_app):
         print("register_componga_app")
@@ -148,18 +200,15 @@ class TrayIcon(wx.adv.TaskBarIcon):
         icon = wx.Icon(path)
         self.SetIcon(icon, "Componga")
 
-    def on_right_click(self, event):
+    def on_left_click(self, event):
         self.PopupMenu(self._menu)
 
     def on_show(self, event):
         if not self._componga_app:
             # Launch componga in a separate thread, and wait for it to register
-            #   itself with the launcher because wxPython is not thread-safe and we don't want
-            #   mix up GUI calls from different threads, kivy and wxPython ones
+            #   itself with self because wxPython is not thread-safe and we don't want
+            #   to mix up GUI calls from different main loop threads, kivy and wxPython ones
             self._launch_componga()
-            with self.componga_ready:
-                while not self._componga_app:
-                    self.componga_ready.wait()
 
         frame = ImageFrame(self._on_desktop_selected)
         frame.Show()

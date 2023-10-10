@@ -43,10 +43,13 @@ class DrawSurface(FloatLayout):
 
         self._bg_handler = None
 
-    def post_init(self):
-        # Take the first background screenshot here, after app window is created and properly initialized
-        self._bg_handler = BackgroundScreenshotHandler(self)
-        self._bg_handler.take_screenshot()
+        self.bind(size=self.on_size, pos=self.on_pos)
+
+        with self.canvas.before:
+            Color(1, 1, 1, 1)
+            self.bg_rect = KivyRectangle(pos=(0, 0), size=self.size)
+            Color(1, 0, 0, 1)
+            self.bg_border = Line(rectangle=(0, 0, *self.size), width=5)
 
     def _load_shortcuts(self):
         # XXX Is there a better way to do this? Get the options as a dict?
@@ -86,7 +89,9 @@ class DrawSurface(FloatLayout):
     def set_monitors(self, monitor, monitor_unsc):
         self._monitor = monitor
         self._monitor_unsc = monitor_unsc
-        self._bg_handler = BackgroundScreenshotHandler(self, self._monitor, self._app.root_window)
+        self._bg_handler = BackgroundScreenshotHandler(
+            self, self._monitor, self._app.root_window
+        )
 
     def fake_desktop_background(self):
         if self.background:
@@ -117,7 +122,7 @@ class DrawSurface(FloatLayout):
             elif cmd == "update_background":
                 self.fake_desktop_background()
             elif cmd == "exit":
-                self.exit_app()
+                self.hide_window()
             return True
 
         elif kcode in shape_shortc:
@@ -206,26 +211,58 @@ class DrawSurface(FloatLayout):
 
         self._show_shape_preview()
 
-    def exit_app(self):
+    def hide_window(self):
         # Cleanup resources before exiting
+        self._cleanup()
+
+        self._app.hide_window()
+
+    def _cleanup(self):
         if self.background:
             self.background.close()
 
-        self._app.stop()
+        if self._menu:
+            self._menu.dismiss()
+
+        self._close_shape_preview()
+
+    # FIXME This method is not being called when the window is moved
+    def on_pos(self, instance, value):
+        print(f"on_pos: {value}")
+        self.bg_rect.pos = instance.pos
+        self.bg_rect.pos = instance.pos
+        self.bg_border.rectangle = (*instance.pos, *instance.size)
+        if self.background:
+            self._set_background(self.background)
+
+    # FIXME This method is not being called when the window is resized
+    def on_size(self, instance, value):
+        print(f"on_size: {value}")
+        self.bg_rect.pos = instance.pos
+        self.bg_border.rectangle = (*instance.pos, *instance.size)
+        if self.background:
+            self._set_background(self.background)
 
     def _set_background(self, new_background):
         print(f"setting background: {new_background}")
         bg = new_background
         bg_size = Image.open(bg.name).size
 
-        with self.canvas.before:
-            Color(1, 1, 1, 1)
-            KivyRectangle(source=bg.name, pos=(0, 0), size=bg_size)
-            Color(1, 0, 0, 1)
-            Line(rectangle=(0, 0, *bg_size), width=5)
+        print(f"setting background bg_size: {bg_size}")
 
-        self.background = bg
+        # FIXME Random positioning of image and image border when in small laptop monitor
+        self.bg_rect.source = bg.name
+        self.bg_rect.size = bg_size
 
+        # with self.canvas.before:
+        #     Color(1, 1, 1, 1)
+        #     KivyRectangle(source=bg.name, pos=(0, 0), size=bg_size)
+        #     Color(1, 0, 0, 1)
+        #     Line(rectangle=(0, 0, *bg_size), width=5)
+
+        # self.background = bg
+
+        self._app._win_info("drawsurface set_background")
 
     def _handle_mouse_wheel(self, wheel_direction):
         if "shift" in self._pressed_keycodes:
